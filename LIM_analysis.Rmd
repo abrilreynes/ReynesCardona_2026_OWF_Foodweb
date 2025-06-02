@@ -1,0 +1,963 @@
+---
+title: "Solve_LIMS_cleaned"
+output: html_document
+date: "2025-01-15"
+---
+
+```{r LIM SET UP, include = F, warning=F}
+
+setwd("~/phD/WP1_TemporalFW/manuscript/code")
+require(LIM)
+library(LIM)
+library(DT)
+library(NetIndices)
+library(dplyr)
+library(ggpubr)
+require(resample)
+library(gridExtra)
+library(matrixStats)
+library(patchwork)
+library(samplelim)
+library(autoLIMR)
+library(igraph)
+library(tidyr)
+source("functions/calculate_LIM_indices.R")
+source("functions/adapted_ENAfuncs.R")
+source("functions/cycling_analysis.R")
+source("functions/network_indices.R")
+source("functions/sample_save_Lims.R")
+#load("LIM_data.Rdata")
+
+
+
+```
+
+#LIM set up and validity of the solution
+```{r}
+############################ 2009 ##########################
+# File path for 2009 data
+abrilfw09 <- "input_files_LIM/FW_2009_bact.txt"
+abrilfw12 <- "input_files_LIM/FW_2012_bact.txt"
+abrilfw16 <- "input_files_LIM/FW_2016_bact.txt"
+abrilfw19 <- "input_files_LIM/FW_2019_bact.txt"
+abrilfw22 <- "input_files_LIM/FW_2022_bact.txt"
+
+# Read data
+readLIM.abril09 <- LIM::Read(file = abrilfw09, verbose = TRUE, checkLinear = TRUE)
+readLIM.abril12 <- LIM::Read(file = abrilfw12, verbose = TRUE, checkLinear = TRUE)
+readLIM.abril16 <- LIM::Read(file = abrilfw16, verbose = TRUE, checkLinear = TRUE)
+readLIM.abril19 <- LIM::Read(file = abrilfw19, verbose = TRUE, checkLinear = TRUE)
+readLIM.abril22 <- LIM::Read(file = abrilfw22, verbose = TRUE, checkLinear = TRUE)
+
+
+LIM.abril09 <- Setup(readLIM.abril09)
+LIM.abril12 <- Setup(readLIM.abril12)
+LIM.abril16 <- Setup(readLIM.abril16)
+LIM.abril19 <- Setup(readLIM.abril19)
+LIM.abril22 <- Setup(readLIM.abril22)
+
+# Calculate solution and check validity of the solution
+Solldeiabril09 <- Ldei(LIM.abril09, verbose = TRUE)
+Rangesabril09 <- lim.ranges(LIM.abril09)
+any((LIM.abril09$A %*% Solldeiabril09$X - LIM.abril09$B) > 1e-8)
+any((LIM.abril09$G %*% Solldeiabril09$X - LIM.abril09$H) < (-1e-8))
+
+Solldeiabril12 <- Ldei(LIM.abril12, verbose = TRUE)
+Rangesabril12 <- lim.ranges(LIM.abril12)
+any((LIM.abril12$A %*% Solldeiabril12$X - LIM.abril12$B) > 1e-8)
+any((LIM.abril12$G %*% Solldeiabril12$X - LIM.abril12$H) < (-1e-8))
+
+Solldeiabril16 <- Ldei(LIM.abril16, verbose = TRUE)
+Rangesabril16 <- lim.ranges(LIM.abril16)
+any((LIM.abril16$A %*% Solldeiabril16$X - LIM.abril16$B) > 1e-8)
+any((LIM.abril16$G %*% Solldeiabril16$X - LIM.abril16$H) < (-1e-8))
+
+Solldeiabril19 <- Ldei(LIM.abril19, verbose = TRUE)
+Rangesabril19 <- lim.ranges(LIM.abril19)
+any((LIM.abril19$A %*% Solldeiabril19$X - LIM.abril19$B) > 1e-8)
+any((LIM.abril19$G %*% Solldeiabril19$X - LIM.abril19$H) < (-1e-8))
+
+Solldeiabril22 <- Ldei(LIM.abril22, verbose = TRUE)
+Rangesabril22 <- lim.ranges(LIM.abril22)
+any((LIM.abril22$A %*% Solldeiabril22$X - LIM.abril22$B) > 1e-8)
+any((LIM.abril22$G %*% Solldeiabril22$X - LIM.abril22$H) < (-1e-8))
+
+# Plot web diagram, change according to the year you want to plot
+diagram::plotweb(Flowmatrix(lim = LIM.abril19, web = Solldeiabril19$X + 1),
+  bty = "n", lab.size = 0.6, log = TRUE, leg.title = "log + 1"
+)
+
+```
+
+#Sample LIM solutions
+
+Not running because this process is intense and a HPC is needed.
+```{r, eval = F}
+LIMs <- list(
+abril16 = LIM.abril16,
+abril09 = LIM.abril09,
+abril12 = LIM.abril12,
+abril22 = LIM.abril22)
+abril19 = LIM.abril19)   
+
+output_directory <- "code"
+
+calculate_and_save_batches(LIMs, output_directory, nsamp_total =1800, batch_size =1800)
+```
+
+```{r}
+load("LIM_data.Rdata")
+```
+
+#Visualize flow ranges
+```{r, fig.height=10, fig.width=6}
+par(mfrow=c(2,2))
+
+RangeVal_LIM_abril09 <- sort(Rangesabril09[,2] - Rangesabril09[,1])
+plot(cbind(RangeVal_LIM_abril09), axes=FALSE, xlab="", ylab="", main="Flow ranges - LIM.abril09", log="")
+axis(1, at=1:length(RangeVal_LIM_abril09), labels=names(RangeVal_LIM_abril09), las=2, cex.axis=1)
+axis(2, las=2)
+
+RangeVal_LIM_abril12 <- sort(Rangesabril12[,2] - Rangesabril12[,1])
+plot(cbind(RangeVal_LIM_abril12), axes=FALSE, xlab="", ylab="", main="Flow ranges - LIM.abril12", log="")
+axis(1, at=1:length(RangeVal_LIM_abril12), labels=names(RangeVal_LIM_abril12), las=2, cex.axis=1)
+axis(2, las=2)
+
+RangeVal_LIM_abril16 <- sort(Rangesabril16[,2] - Rangesabril16[,1])
+plot(cbind(RangeVal_LIM_abril16), axes=FALSE, xlab="", ylab="", main="Flow ranges - LIM.abril16", log="")
+axis(1, at=1:length(RangeVal_LIM_abril16), labels=names(RangeVal_LIM_abril16), las=2, cex.axis=1)
+axis(2, las=2)
+
+RangeVal_LIM_abril19 <- sort(Rangesabril19[,2] - Rangesabril19[,1])
+plot(cbind(RangeVal_LIM_abril19), axes=FALSE, xlab="", ylab="", main="Flow ranges - LIM.abril19", log="")
+axis(1, at=1:length(RangeVal_LIM_abril19), labels=names(RangeVal_LIM_abril19), las=2, cex.axis=1)
+axis(2, las=2)
+
+RangeVal_LIM_abril22 <- sort(Rangesabril22[,2] - Rangesabril22[,1])
+plot(cbind(RangeVal_LIM_abril22), axes=FALSE, xlab="", ylab="", main="Flow ranges - LIM.abril22", log="")
+axis(1, at=1:length(RangeVal_LIM_abril22), labels=names(RangeVal_LIM_abril22), las=2, cex.axis=1)
+axis(2, las=2)
+
+```
+
+#Calculate the variables for each repetition
+
+**Resp:** Value of the flow going to DIC **Uptake:** All flows going to that compartment **Assimilation:** Uptake minus the flows going to detritus.
+**Production:** Assimilation minus respiration
+
+```{r, echo = F, fig.width=13, fig.height=10, include = F}
+
+# Create a matrix with rows as number of variables, and columns as number of repetitons (to store the variables of each repetition and afterwards make stats)
+Var_2009 <- matrix(NA, 
+                             nrow = LIM.abril09$NVariables,
+                             ncol = nrow(results_2009),
+                             dimnames = list(LIM.abril09$Variables, 
+                                             1:nrow(results_2009)))
+
+for (i in 1:nrow(results_2009)) {
+    Var_2009[, i] <- Variables(LIM.abril09, results_2009[i, ])$values
+}
+
+mean_sd_2009 <- t(apply(Var_2009, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE)))) #calculate mean and standard deviation for each variable
+
+results_2009_stats <- data.frame(
+  mean = round(mean_sd_2009[, 1], 4),
+  sd = round(mean_sd_2009[, 2], 4),
+  row.names = rownames(Var_2009)
+)
+
+# Rename columns
+colnames(results_2009_stats) <- c("mean_2009", "sd_2009")
+
+# Repeat for other years
+Var_2012 <- matrix(NA, 
+                             nrow = LIM.abril12$NVariables,
+                             ncol = nrow(results_2012),
+                             dimnames = list(LIM.abril12$Variables, 
+                                             1:nrow(results_2012)))
+
+for (i in 1:nrow(results_2012)) {
+    Var_2012[, i] <- Variables(LIM.abril12, results_2012[i, ])$values
+}
+
+mean_sd_2012 <- t(apply(Var_2012, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE))))
+
+results_2012_stats <- data.frame(
+  mean = round(mean_sd_2012[, 1], 4),
+  sd = round(mean_sd_2012[, 2], 4),
+  row.names = rownames(Var_2012)
+)
+
+# Rename columns
+colnames(results_2012_stats) <- c("mean_2012", "sd_2012")
+
+# 2016
+Var_2016 <- matrix(NA, 
+                             nrow = LIM.abril16$NVariables,
+                             ncol = nrow(results_2016),
+                             dimnames = list(LIM.abril16$Variables, 
+                                             1:nrow(results_2016)))
+
+for (i in 1:nrow(results_2016)) {
+    Var_2016[, i] <- Variables(LIM.abril16, results_2016[i, ])$values
+}
+
+mean_sd_2016 <- t(apply(Var_2016, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE))))
+
+results_2016_stats <- data.frame(
+  mean = round(mean_sd_2016[, 1], 5),
+  sd = round(mean_sd_2016[, 2], 5),
+  row.names = rownames(Var_2016)
+)
+
+# Rename columns
+colnames(results_2016_stats) <- c("mean_2016", "sd_2016")
+
+
+# 2019
+Var_2019 <- matrix(NA, 
+                             nrow = LIM.abril19$NVariables,
+                             ncol = nrow(results_2019),
+                             dimnames = list(LIM.abril19$Variables, 
+                                             1:nrow(results_2019)))
+
+for (i in 1:nrow(results_2019)) {
+    Var_2019[, i] <- Variables(LIM.abril19, results_2019[i, ])$values
+}
+
+mean_sd_2019 <- t(apply(Var_2019, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE))))
+
+results_2019_stats <- data.frame(
+  mean = round(mean_sd_2019[, 1], 4),
+  sd = round(mean_sd_2019[, 2], 4),
+  row.names = rownames(Var_2019)
+)
+
+ # 2022
+Var_2022 <- matrix(NA, 
+                             nrow = LIM.abril22$NVariables,
+                             ncol = nrow(results_2022),
+                             dimnames = list(LIM.abril22$Variables, 
+                                             1:nrow(results_2022)))
+
+for (i in 1:nrow(results_2022)) {
+    Var_2022[, i] <- Variables(LIM.abril22, results_2022[i, ])$values
+}
+
+# Apply the function to each row of the matrix (x represents the row values, Margin = 1).
+# For each row, calculate the mean and standard deviation, ignoring NA values.
+mean_sd_2022 <- t(apply(Var_2022, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE))))
+
+results_2022_stats <- data.frame(
+  mean = round(mean_sd_2022[, 1], 4),
+  sd = round(mean_sd_2022[, 2], 4),
+  row.names = rownames(Var_2022)
+)
+
+# Rename columns
+colnames(results_2022_stats) <- c("mean_2022", "sd_2022") 
+
+```
+
+
+```{r}
+# Calculate indices for each year and type
+GenInd09 <- calculate_indices(LIM.abril09, results_2009, "2009", "gen")
+GenInd12 <- calculate_indices(LIM.abril12, results_2012, "2012", "gen")
+GenInd16 <- calculate_indices(LIM.abril16, results_2016, "2016", "gen")
+GenInd19 <- calculate_indices(LIM.abril19, results_2019, "2019", "gen")
+GenInd22 <- calculate_indices(LIM.abril22, results_2022, "2022", "gen")
+
+# Calculate indices for each year and type
+PathInd09 <- calculate_indices(LIM.abril09, results_2009, "2009", "path")
+PathInd12 <- calculate_indices(LIM.abril12, results_2012, "2012", "path")
+PathInd16 <- calculate_indices(LIM.abril16, results_2016, "2016", "path")
+PathInd19 <- calculate_indices(LIM.abril19, results_2019, "2019", "path")
+PathInd22 <- calculate_indices(LIM.abril22, results_2022, "2022", "path")
+```
+#Interaction strenght
+```{r, warning = F}
+
+col_palette <- RColorBrewer::brewer.pal(9, "Set2")
+
+FM_2009 = LIM::Flowmatrix(LIM.abril09, web = colMeans(results_2009))
+FM_2012 = LIM::Flowmatrix(LIM.abril12, web = colMeans(results_2012))
+FM_2016 = LIM::Flowmatrix(LIM.abril16, web = colMeans(results_2016))
+FM_2019 = LIM::Flowmatrix(LIM.abril19, web = colMeans(results_2019))
+FM_2022 = LIM::Flowmatrix(LIM.abril22, web = colMeans(results_2022))
+
+link_weights_2009 <- calculate_link_weights_distribution(FM_2009, results_2009, "2009")
+link_weights_2012 <- calculate_link_weights_distribution(FM_2012, results_2012, "2012")
+link_weights_2016 <- calculate_link_weights_distribution(FM_2016, results_2016, "2016")
+link_weights_2019 <- calculate_link_weights_distribution(FM_2019, results_2019, "2019")
+link_weights_2022 <- calculate_link_weights_distribution(FM_2022, results_2022, "2022")
+
+# Combine results from all years
+link_weights_all <- bind_rows(link_weights_2009, link_weights_2012, link_weights_2016, link_weights_2019, link_weights_2022)
+
+# Summary and plotting
+# Calculate summary statistics across all years
+summary_stats <- link_weights_all %>%
+  group_by(Network) %>%
+  summarise(
+    Mean_of_Mean_Link_Weight = mean(Mean_Link_Weight),
+    Variance_of_Link_Weight = mean(Variance_Link_Weight),
+    Mean_SD_Link_Weight = mean(SD_Link_Weight)
+  )
+
+# Print summary statistics
+print(summary_stats)
+
+#write.csv(summary_stats, "~/phD/WP1_TemporalFW/LIM/interaction_Strenght_stats_Results.csv")
+
+# Plot the distribution of link weights across years
+IS = ggplot(link_weights_all, aes(x = Mean_Link_Weight, fill = Network)) +
+  facet_wrap(~ Network, scales = "free") +
+  scale_fill_manual(values = col_palette) + 
+  geom_histogram(bins = 30, position = "dodge", alpha = 0.7) +
+  labs(title = "Interaction strength",
+       x = expression("mmol C / m"^2*"/day"),
+       y = "Frequency") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(hjust = 1),
+        strip.text = element_text(size = 10), 
+        panel.background = element_blank(), 
+        plot.background = element_blank())
+
+col_palette <- RColorBrewer::brewer.pal(9, "Set1")
+
+# Calcular para cada red y combinar resultados
+df_list <- list(
+  calculate_link_weights_distribution2(FM_2009, results_2009, "2009"),
+  calculate_link_weights_distribution2(FM_2012, results_2012, "2012"),
+  calculate_link_weights_distribution2(FM_2016, results_2016, "2016"),
+  calculate_link_weights_distribution2(FM_2019, results_2019, "2019"),
+  calculate_link_weights_distribution2(FM_2022, results_2022, "2022")
+)
+
+link_weights_all <- bind_rows(df_list)
+
+# Calcular medias por año para anotar en el plot
+mean_values <- link_weights_all %>%
+  group_by(Network) %>%
+  summarize(Mean_Link_Weight = mean(Mean_Link_Weight),
+            Variance_link_weight =  mean(Variance_Link_Weight)) 
+
+
+# Boxplot de la varianza de los pesos de enlace con anotaciones de media
+variance_IS <- ggplot(link_weights_all, aes(x = Network, y = Variance_Link_Weight, fill = Network)) +
+  geom_boxplot(outlier.size = 2, outlier.colour = "red", alpha = 0.7) +
+  geom_text(data = mean_values, aes(label = round(Mean_Link_Weight, 3), y = max(link_weights_all$Variance_Link_Weight) *0.9),
+            position = position_dodge(width = 0.95), size = 5, vjust = -0.2) +
+  labs(title = "Interaction strength (IS)",
+       x = "Year",
+       y = expression("IS (mmol C / m"^2*"/day)"),
+       fill = "Year") +
+  scale_fill_manual(values = col_palette, "paired") +
+  theme_bw() +
+  theme(axis.text.x = element_text(hjust = 1),
+        strip.text = element_text(size = 10), 
+        panel.background = element_blank(), 
+        plot.background = element_blank())
+
+```
+
+#Statistical comparison of years
+```{r}
+
+library(car)
+
+GenIndices_all$T.. = as.numeric(GenIndices_all$T..)
+
+# 1. Shapiro-Wilk test for normality in each year
+shapiro_results <- GenIndices_all %>%
+  group_by(Network) %>%
+  summarise(
+    W = shapiro.test(T..)$statistic,
+    p_value = shapiro.test(T..)$p.value
+  )
+
+print("Shapiro-Wilk normality test per group:")
+print(shapiro_results)
+
+# 2. Levene's test for equal variances
+print("Levene’s test for homogeneity of variances:")
+levene_result <- leveneTest(T.. ~ Network, data = GenIndices_all)
+print(levene_result)
+
+# 3. Diagnostic plot (Q-Q)
+ggplot(GenIndices_all, aes(sample = T..)) +
+  stat_qq() + 
+  stat_qq_line() + 
+  facet_wrap(~ Network) +
+  theme_minimal() +
+  labs(title = "Q-Q plots for normality check")
+
+
+# Kruskal–Wallis test
+kruskal_test <- kruskal.test(T.. ~ Network, data = GenIndices_all)
+print(kruskal_test)
+
+# Pairwise Wilcoxon test with Holm correction
+pairwise_wilcox <- pairwise.wilcox.test(GenIndices_all$`T..`, GenIndices_all$Network, 
+                                        p.adjust.method = "holm")
+
+print(pairwise_wilcox)
+
+PathIndices_all$FCIb = as.numeric(PathIndices_all$FCIb)
+
+# Kruskal–Wallis test
+kruskal_test <- kruskal.test(FCIb ~ Network, data = PathIndices_all)
+print(kruskal_test)
+
+# Pairwise Wilcoxon test with Holm correction
+pairwise_wilcox <- pairwise.wilcox.test(PathIndices_all$FCIb, PathIndices_all$Network, 
+                                        p.adjust.method = "holm")
+
+print(pairwise_wilcox)
+
+link_weights_all$Variance_Link_Weight = as.numeric(link_weights_all$Variance_Link_Weight)
+
+# Kruskal–Wallis test
+kruskal_test <- kruskal.test(Variance_Link_Weight ~ Network, data = link_weights_all)
+print(kruskal_test)
+
+# Pairwise Wilcoxon test with Holm correction
+pairwise_wilcox <- pairwise.wilcox.test(link_weights_all$Variance_Link_Weight, link_weights_all$Network, 
+                                        p.adjust.method = "holm")
+
+print(pairwise_wilcox)
+
+```
+
+#Carbon stocks
+
+```{r, echo = F, fig.width=12, fig.height=5, echo = F, include = F, warning = F}
+# Assume LIM.abril09 is your only LIM object
+CstocksTot_09 <- round(LIM.abril09$Components$val, digits = 2)
+
+# Convert to a data frame
+CstocksTot_09 <- as.data.frame(t(CstocksTot_09 ))
+
+# Assign row names (single row name for single data set)
+rownames(CstocksTot_09) <- "Abril09"
+
+# Assign column names
+colnames(CstocksTot_09) <- LIM.abril09$Components$name
+
+Cstocks_09 <- CstocksTot_09 %>%
+  mutate(
+    Detritus = rowSums(dplyr::select(., all_of(c("SOM", "SPOM", "SEDBAC", "WATBAC"))), na.rm = TRUE),
+    Sediment = rowSums(dplyr::select(., all_of(c("DETAMPS", "BIVALVS", "FILTFEDSHRS", "CARPOLS", "THISCUS", "ECHCORS", "DETCARSHRS", "PAGURIS", "CEPHALS", "OPHIURS", "DETPOLRS", "CARCRAS", "ANTHOZOS"))), na.rm = TRUE),
+    Ubiquous = rowSums(dplyr::select(., all_of(c("ASTRUBU", "PSAMMU", "DETCRARU", "CARPOLPU", "NEPHTYU", "NEMERTU"))), na.rm = TRUE),
+    Plankton = rowSums(dplyr::select(., all_of(c("PHY", "ZOO"))), na.rm = TRUE),
+    Fish = rowSums(dplyr::select(., all_of(c("PLEURO", "ECHVIP", "CALLSP", "POMSP", "AMMOD", "GADID", "MULSUR"))), na.rm = TRUE),
+    Turbine = rowSums(dplyr::select(., all_of(c("METRIDTR", "CARCRATR", "SUSGASTR", "CARPOLTR", "SUDECRATR", "MYTILUTR", "NUDIBRTR", "BALANOTR", "JASSATR", "DETPOLTR", "BIVALVTR", "OPHIURTR", "LEPTRETR", "SDAMPTR"))), na.rm = TRUE)
+  )
+
+
+Cstocks_09  <- Cstocks_09  %>%
+  dplyr::select(
+    Detritus, 
+    Turbine, Sediment, Ubiquous, Plankton, Fish)
+
+CstockTot_09_long <- pivot_longer(Cstocks_09 , names_to = "Variable", values_to = "value", cols = everything())
+
+# Define colors for the variables
+Colors <- colors()[c(201, 496, 12, 142, 153, 157)]
+
+
+# Assume LIM.abril12 is your only LIM object
+CstocksTot_12 <- round(LIM.abril12$Components$val, digits = 2)
+
+# Convert to a data frame
+CstocksTot_12 <- as.data.frame(t(CstocksTot_12 ))
+
+# Assign row names (single row name for single data set)
+rownames(CstocksTot_12) <- "Abril12"
+
+# Assign column names
+colnames(CstocksTot_12) <- LIM.abril12$Components$name
+
+Cstocks_12 <- CstocksTot_12 %>%
+  mutate(
+    Detritus = rowSums(dplyr::select(., "SOM", "SPOM", "SEDBAC", "WATBAC"), na.rm = TRUE),
+    Turbine = rowSums(dplyr::select(., "LEPTRETR", "BALANOTR", "MYTILUTR", "CARPOLTR", "NUDIBRTR", "OPHIURTR", "DETPOLTR", "JASSATR", "DETCRATR", "METRIDTR", "DETAMPTR"), na.rm = TRUE),
+    Sediment = rowSums(dplyr::select(., "CARPOLS", "CARCRAS", "HERBCRABS", "CEPHALS", "BIVALVS", "CUMACERS", "PAGURIS", "DETCARSHRS", "DETAMPS", "DETPOLRS", "OPHIURS", "ECHCORS", "ANTHOZOA"), na.rm = TRUE),
+    Ubiquous = rowSums(dplyr::select(., "CARPOLPU", "NEMERTU", "HOMGAMU", "PSAMMU", "ASTRUBU", "NEPHTYU"), na.rm = TRUE),
+    Plankton = rowSums(dplyr::select(., "PHY", "ZOO"), na.rm = TRUE),
+    Fish = rowSums(dplyr::select(., "MULSUR", "AGONCAT", "AMMOD", "CALLSP", "GADID", "ECHVIP", "PLEURO"), na.rm = TRUE)
+  ) 
+
+Cstocks_12  <- Cstocks_12  %>%
+  dplyr::select(
+    Detritus, 
+    Turbine, Sediment, Ubiquous, Plankton, Fish)
+
+CstockTot_12_long <- pivot_longer(Cstocks_12 , names_to = "Variable", values_to = "value", cols = everything())
+
+# Define colors for the variables
+Colors <- colors()[c(201, 496, 12, 142, 153, 157)]
+
+# Assume LIM.abril16 is your only LIM object
+CstocksTot_16 <- round(LIM.abril16$Components$val, digits = 2)
+
+# Convert to a data frame
+CstocksTot_16 <- as.data.frame(t(CstocksTot_16 ))
+
+# Assign row names (single row name for single data set)
+rownames(CstocksTot_16) <- "Abril16"
+
+# Assign column names
+colnames(CstocksTot_16) <- LIM.abril16$Components$name
+
+Cstocks_16 <- CstocksTot_16 %>%
+  mutate(
+    Detritus = rowSums(dplyr::select(., "SOM", "SPOM", "SEDBAC", "WATBAC"), na.rm = TRUE),
+        Sediment = rowSums(dplyr::select(., "CARPOLS", "CARCRAS", "CUMACERS", "CEPHALS", "BIVALVS", "PAGURIS", "DETCARSHRS", "DETAMPS", "DETPOLRS", "OPHIURS", "ECHCORS", "THISCUS"), na.rm = TRUE),
+    Turbine = rowSums(dplyr::select(.,"DETAMPTR", "OPHFRAT", "ANTHOZTR", "LEPTRETR", "BALANOTR", "CARPOLTR", "BIVALVTR", "CARCRATR", "JASSATR", "MYTILUTR", "METRIDTR", "SUDECRATR"), na.rm = TRUE),
+    Ubiquous = rowSums(dplyr::select(., "GASTRU", "ASTRUBU", "PSAMMU", "NEMERTU", "NEPHTYU"), na.rm = TRUE),
+    Fish = rowSums(dplyr::select(., "COTTIDAE", "TRIGLI", "POMSP", "AMMOD", "MULSUR", "CALLSP", "GADID", "ECHVIP", "PLEURO"), na.rm = TRUE),
+    Plankton = rowSums(dplyr::select(., "PHY", "ZOO"), na.rm = TRUE)
+  ) 
+
+Cstocks_16  <- Cstocks_16  %>%
+  dplyr::select(
+   Detritus, 
+    Turbine, Sediment, Ubiquous, Plankton, Fish)
+
+CstockTot_16_long <- pivot_longer(Cstocks_16 , names_to = "Variable", values_to = "value", cols = everything())
+
+#######
+
+# Define colors for the variables
+Colors <- colors()[c(201, 496, 12, 142, 153, 157)]
+
+# Assume LIM.abril19 is your only LIM object
+CstocksTot_19 <- round(LIM.abril19$Components$val, digits = 2)
+
+# Convert to a data frame
+CstocksTot_19 <- as.data.frame(t(CstocksTot_19 ))
+
+# Assign row names (single row name for single data set)
+rownames(CstocksTot_19) <- "Abril19"
+
+# Assign column names
+colnames(CstocksTot_19) <- LIM.abril19$Components$name
+
+Cstocks_19 <- CstocksTot_19 %>%
+  mutate(
+    Detritus = rowSums(dplyr::select(., "SOM", "SPOM", "SEDBAC", "WATBAC"), na.rm = TRUE),
+    
+    Sediment = rowSums(dplyr::select(., "OPHIURS", "ANTHOZS", "ECHCORS", "DETCARSHRS", "DPAMPS", "PAGURIS", 
+                              "CEPHALS", "CARCRAS", "CUMACERS", "THISCUS", "BIVALVS", "CARPOLS", 
+                              "DETAMPS", "DETPOLRS"), na.rm = TRUE),
+    
+    Turbine = rowSums(dplyr::select(., "BIVALVTR", "SDAMPTR", "LEPTRETR", "DETPOLTR", "OPHIURTR", "BALANOTR", 
+                             "MYTILUTR", "JASSATR", "CARCRATR", "SUSGASTR", "SUDECRATR", "CARPOLTR", 
+                             "METRIDTR", "DETAMPTR"), na.rm = TRUE),
+    
+    Ubiquous = rowSums(dplyr::select(., "PSAMMU", "ASTRUBU", "NEPHTYU", "NEMERTU", "DETCRARU"), na.rm = TRUE),
+    
+    Fish = rowSums(dplyr::select(., "ZEUFA", "MULSUR", "POMSP", "COTTIDAE", "AMMOD", "TRIGLI", 
+                          "CALLSP", "ECHVIP", "PLEURO"), na.rm = TRUE),
+    Plankton = rowSums(dplyr::select(., "PHY", "ZOO"), na.rm = TRUE)
+  ) 
+
+Cstocks_19  <- Cstocks_19  %>%
+  dplyr::select(
+   Detritus, 
+    Turbine, Sediment, Ubiquous, Plankton, Fish)
+
+CstockTot_19_long <- pivot_longer(Cstocks_19 , names_to = "Variable", values_to = "value", cols = everything())
+
+#######
+
+# Assume LIM.abril22 is your only LIM object for 2022
+CstocksTot_22 <- round(LIM.abril22$Components$val, digits = 2)
+
+# Convert to a data frame
+CstocksTot_22 <- as.data.frame(t(CstocksTot_22))
+
+# Assign row names (single row name for single data set)
+rownames(CstocksTot_22) <- "Abril22"
+
+# Assign column names
+colnames(CstocksTot_22) <- LIM.abril22$Components$name
+
+# Calculate the categories with updated compartments
+Cstocks_22 <- CstocksTot_22 %>%
+  mutate(
+    Detritus = rowSums(dplyr::select(., all_of(c("SOM", "SPOM", "SEDBAC", "WATBAC"))), na.rm = TRUE),
+    
+    # Sediment (updated with new compartments)
+    Sediment = rowSums(dplyr::select(., all_of(c("DETAMPS", "ECHCORS", "CARCRAS", "OPHIURS", "DETPOLRS", "DETCARSHRS", 
+                                                "CARPOLS", "THISCUS", "BIVALVS", "CUMACERS", "CEPHALS", 
+                                                "ANTHOZOS"))), na.rm = TRUE),
+
+    # Ubiquous (updated with new compartments)
+    Ubiquous = rowSums(dplyr::select(., all_of(c("ASTRUBU", "PSAMMU", "NEMERTU", "GASTRU", "DETCRARU", "NEPHTYU"))), na.rm = TRUE),
+
+    # Plankton category remains the same as before
+    Plankton = rowSums(dplyr::select(., all_of(c("PHY", "ZOO"))), na.rm = TRUE),
+
+    # Fish (updated with new compartments)
+    Fish = rowSums(dplyr::select(., all_of(c("ECHVIP", "PLEURO", "MULSUR", "GADID", "POMSP", "CALLSP", "AMMOD"))), na.rm = TRUE),
+    
+    # Turbine (updated with new compartments)
+    Turbine = rowSums(dplyr::select(., all_of(c("METRIDTR", "SUSGASTR", "MYTILUTR", "SDAMPTR", "CARPOLTR", "SUDECRATR", "BIVALVTR", 
+                                                "DETPOLTR", "BALANOTR", "LEPTRETR", "JASSATR", "OPHIURTR", "CARCRATR", "DETAMPTR"))), na.rm = TRUE)
+  )
+
+# Select relevant columns (Detritus, Turbine, Sediment, Ubiquous, Plankton, Fish)
+Cstocks_22  <- Cstocks_22  %>%
+  dplyr::select(
+    Detritus, 
+    Turbine, Sediment, Ubiquous, Plankton, Fish)
+
+# Reshape to long format
+CstockTot_22_long <- pivot_longer(Cstocks_22 , names_to = "Variable", values_to = "value", cols = everything())
+
+max_value <- 400
+
+Colors <- c("Turbine" = "#0072B2",    # Blue
+            "Ubiquous" = "#E69F00",   # Orange
+            "Sediment" = "#009E73",   # Green
+            "Fish" = "#D55E00",       # Red-Orange
+            "Plankton" = "#CC79A7") 
+            
+Cstocks09_plot2 <- ggplot(CstockTot_09_long, aes(fill = Variable, y = value, x = "")) + 
+  geom_bar(position = "dodge", stat = "identity") +
+  scale_fill_manual(values = Colors) +
+  ylab(expression(paste("C stocks 2009 [mmol C m "^-2, "]"))) +
+  xlab("") +
+  theme_minimal(base_size = 10) +
+  theme(text = element_text(size = 10)) +
+  scale_color_viridis_d() +
+  theme(axis.text = element_text(size = 10), axis.title.x = element_blank()) +
+  theme(legend.position = "bottom", legend.title = element_blank(), legend.text = element_text(size = 10)) +
+  ylim(0, max_value)
+
+# Plot for 2012
+Cstocks12_plot2 <- ggplot(CstockTot_12_long, aes(fill = Variable, y = value, x = "")) + 
+  geom_bar(position = "stack", stat = "identity") +
+  scale_fill_manual(values = Colors) +
+  ylab(expression(paste("C stocks 2012 [mmol C m "^-2, "]"))) +
+  xlab("") +
+  theme_minimal(base_size = 10) +
+  theme(text = element_text(size = 10)) +
+  scale_color_viridis_d() +
+  theme(axis.text = element_text(size = 10), axis.title.x = element_blank()) +
+  theme(legend.position = "bottom", legend.title = element_blank(), legend.text = element_text(size = 10)) +
+  ylim(0, max_value)
+
+# Plot for 2016
+Cstocks16_plot2 <- ggplot(CstockTot_16_long, aes(fill = Variable, y = value, x = "")) +
+  geom_bar(position = "stack", stat = "identity") +
+  scale_fill_manual(values = Colors) +
+  ylab(expression(paste("C stocks 2016 [mmol C m "^-2, "]"))) +
+  xlab("") +
+  theme_minimal(base_size = 10) +
+  theme(text = element_text(size = 10)) +
+  scale_color_viridis_d() +
+  theme(axis.text = element_text(size = 10), axis.title.x = element_blank()) +
+  theme(legend.position = "bottom", legend.title = element_blank(), legend.text = element_text(size = 10)) +  
+  ylim(0, max_value)
+
+Cstocks19_plot2 <- ggplot(CstockTot_19_long, aes(fill = Variable, y = value, x = "")) +
+  geom_bar(position = "stack", stat = "identity") +
+  scale_fill_manual(values = Colors) +
+  ylab(expression(paste("C stocks 2019 [mmol C m "^-2, "]"))) +
+  xlab("") +
+  theme_minimal(base_size = 10) +
+  theme(text = element_text(size = 10)) +
+  scale_color_viridis_d() +
+  theme(axis.text = element_text(size = 10), axis.title.x = element_blank()) +
+  theme(legend.position = "bottom", legend.title = element_blank(), legend.text = element_text(size = 10)) +  
+  ylim(0, max_value)
+
+Cstocks22_plot2 <- ggplot(CstockTot_22_long, aes(fill = Variable, y = value, x = "")) +
+  geom_bar(position = "stack", stat = "identity") +
+  scale_fill_manual(values = Colors) +
+  ylab(expression(paste("C stocks 2022 [mmol C m "^-2, "]"))) +
+  xlab("") +
+  theme_minimal(base_size = 10) +
+  theme(text = element_text(size = 10)) +
+  scale_color_viridis_d() +
+  theme(axis.text = element_text(size = 10), axis.title.x = element_blank()) +
+  theme(legend.position = "bottom", legend.title = element_blank(), legend.text = element_text(size = 10)) +  
+  ylim(0, max_value)
+
+
+# Add a "Year" column to each dataset
+CstockTot_09_long$Year <- "2009"
+CstockTot_12_long$Year <- "2012"
+CstockTot_16_long$Year <- "2016"
+CstockTot_19_long$Year <- "2019"
+CstockTot_22_long$Year <- "2022"
+
+# Combine all datasets into one
+CstockTot_all <- rbind(CstockTot_09_long, CstockTot_12_long, CstockTot_16_long, CstockTot_19_long, CstockTot_22_long)
+
+
+Total_carbon2 <- ggplot(CstockTot_all, aes(fill = Variable, y = value, x = Year)) + 
+  geom_bar(position = "dodge", stat = "identity") +
+  scale_fill_manual(values = Colors) +
+  ylab(expression(paste("C stocks [mmol C m "^-2, "]"))) +
+  xlab("Year") +
+  theme_minimal(base_size = 10) +
+  theme(text = element_text(size = 10),
+        axis.text = element_text(size = 10),
+        axis.title.x = element_text(size = 10)) +
+  theme(legend.position = "bottom", legend.title = element_blank(), legend.text = element_text(size = 10)) +
+  ylim(0, max_value)
+
+
+print(Total_carbon2)
+
+
+```
+
+### Sample diagnostics
+
+There are two types of diagnostics:
+- Plots: you visualize how good the sampling space is sampled
+- Diagnostic: are used to asses statistical convergence. 
+
+A lot of those plots and diagnostics are done at the level of flows, therefore, we have around 500 plots to visually check, therefore, sometimes diagnostics are more easy.
+
+1. Check sample coverage and whether jumpsize is ok
+```{r}
+##################
+samplerange <- data.frame(Rangesabril22)
+samplerange$samplemin <- apply(results_2022, 2, min)
+samplerange$samplemax <- apply(results_2022, 2, max)
+samplerange$percCover <- ((samplerange$samplemax - samplerange$samplemin) / (samplerange$max - samplerange$min) * 100)
+#print(samplerange, digits = 2)
+ 
+# Mean percentage covered range
+mean(samplerange$percCover, na.rm = T)
+
+##################
+samplerange <- data.frame(Rangesabril19)
+samplerange$samplemin <- apply(results_2019, 2, min)
+samplerange$samplemax <- apply(results_2019, 2, max)
+samplerange$percCover <- ((samplerange$samplemax - samplerange$samplemin) / (samplerange$max - samplerange$min) * 100)
+#print(samplerange, digits = 2)
+ 
+# Mean percentage covered range
+mean(samplerange$percCover, na.rm = T)
+
+##################
+samplerange <- data.frame(Rangesabril16)
+samplerange$samplemin <- apply(results_2016, 2, min)
+samplerange$samplemax <- apply(results_2016, 2, max)
+samplerange$percCover <- ((samplerange$samplemax - samplerange$samplemin) / (samplerange$max - samplerange$min) * 100)
+#print(samplerange, digits = 2)
+ 
+# Mean percentage covered range
+mean(samplerange$percCover, na.rm = T)
+
+##################
+samplerange <- data.frame(Rangesabril12)
+samplerange$samplemin <- apply(results_2012, 2, min)
+samplerange$samplemax <- apply(results_2012, 2, max)
+samplerange$percCover <- ((samplerange$samplemax - samplerange$samplemin) / (samplerange$max - samplerange$min) * 100)
+#print(samplerange, digits = 2)
+ 
+# Mean percentage covered range
+mean(samplerange$percCover, na.rm = T)
+
+##################
+samplerange <- data.frame(Rangesabril09)
+samplerange$samplemin <- apply(results_2009, 2, min)
+samplerange$samplemax <- apply(results_2009, 2, max)
+samplerange$percCover <- ((samplerange$samplemax - samplerange$samplemin) / (samplerange$max - samplerange$min) * 100)
+#print(samplerange, digits = 2)
+ 
+# Mean percentage covered range
+mean(samplerange$percCover, na.rm = T)
+
+```
+
+
+**The Raftery and Lewis diagnostic**
+
+The main principle behind the Raftery and Lewis diagnostic is that a correct sample of the objective distribution, here the uniform distribution, should give precise estimates of its quantiles. Usually the 0.025 quantile is used.
+
+This diagnostic provides multiple pieces of information, such as the burning value (M), an estimate of the sample size to ensure precise estimation of a prescribed quantile (N), a lower bound (Nmin), and a dependence factor (I).
+
+The dependance factor assesses the extent to which auto-correlation inflates the required sample size; values larger than 5 indicate a strong auto-correlation.
+
+```{r}
+q <- 0.025
+RL <- coda::raftery.diag(data = results_2012, q=q)
+RL
+```
+
+**The Geweke diagnostic**
+
+The Geweke diagnostic is a classical statistical test of comparison of means applied to prescribed proportions of the first and last points generated by an MCMC algorithm. For each variable, a value $Z$ is computed, the hypothesis of convergence of the algorithm is rejected if $\left| Z \right|$ exceeds a prescribed quantile of the normal distribution. With $p_1 = 0.1$ and $p_2 = 0.5$, convergence is rejected when $\left| Z \right| \geq 1.28$.  f the flow has reached stationarity, the means of the two parts
+will be equal (Plummer et al., 2020), reflected by a Geweke Z-score
+between −1.96 and 1.96 (corresponding to p = 0.05).
+
+Evalautes stationarity, values should be between -1.96 and 1.96
+
+```{r}
+frac1 <- 0.1
+frac2 <- 0.5
+G <- coda::geweke.diag(results_2009, frac1 = frac1, frac2 = frac2)
+G
+
+# Subset flows where Z < -1.96 or Z > 1.96
+flows_outside_1.96 <- G$z[G$z < -1.28 | G$z > 1.28]
+
+# Visualize the subset
+print(flows_outside_1.96)
+```
+
+**Heidelberger and Welch's convergence diagnostic**
+Determines the stationary of the variables in the MCMC chain and burn-in periods.
+It first tests the stationary of the sample chain and he second (halfwidth test) tests if there are enough samples to estimate the mean of the flow values with an acceptable degree of precision.
+
+```{r}
+coda::heidel.diag(results_2009)
+```
+
+**Effective Sample Size**
+
+The Effective Sample Size (ESS) reflects the amount of autocorrelation in the MCMC draws. The closer ESS is to N (the sample size), the better, since it means that the draws are lowly auto-correlated.
+ESS > 10% of total iterations
+
+```{r}
+
+#Get total number of iterations
+total_iters <- nrow(results_2009[[1]])
+
+#Get effective sample sizes
+ess <- coda::effectiveSize(results_2009)
+
+#Identify flows with ESS < 10% of total iterations
+low_ess_flows <- ess[ess < 0.1 * total_iters]
+
+print(low_ess_flows)
+
+```
+
+**Kernel density plots**
+Shows the sample PDF p(x) where stationarity can be iferrred if P(x) approaches the underlying soluton space of PDF q(x). You expect a gaussian disttribution if the flow is properly sampled.
+
+**Trace plot and autocorrelation plots**
+Shows the mixing and autocorelation plots. You expect a catepillat for a well sampled flow.  Trace plots show the
+sampled value of a flow at each iteration of the MCMC chain. A well-
+sampled flow looks like a ’hairy caterpillar’ (Roy, 2020) i.e., a visually
+random pattern that indicates good mixing (van den Meersche et al.,
+2009) (Fig. 4 H).
+
+Autocorrelation plots indicate correlation between successive solutions and, therefore, the proportion of samples that can
+be considered ‘independent’ (Hogg and Foreman-Mackey, 2018). Specifically, the plots show the lag-k (sample) autocorrelation between k
+steps apart (Roy, 2020). For fast mixing MCMC chains, lag-k autocorrelation values drop to zero almost as quickly as k increases (Roy, 2020) (Fig. 4 I).
+
+*Run mean plots* 
+Test the sample efficiency. If it does not stabilize at a fixed value, then more iterations are needed.
+
+```{r}
+results = as.data.frame(results_2009)
+mcmc_plots(results, flow = "JASSATR->SPOM")
+```
+
+#Check the convergence of the results
+```{r}
+## Convergence
+## convergence function
+
+ convergence <- function(Bay  = NULL,
+                         stp  = NULL,
+                         flow = flow)
+  {                       
+  sdevs <- vector("numeric",stp)
+  means <- vector("numeric",stp)
+  n     <- nrow(Bay)
+  for (i in 1:stp){
+    random   <-sort(runif(n),index.return=TRUE) 
+    sdevs[i] <-   sd(Bay[random$ix[1:(i*(n/stp))],flow])
+    means[i] <- mean(Bay[random$ix[1:(i*(n/stp))],flow])
+    }
+  plot(seq(from=n/stp,n,by=n/stp),means,xlab="No of solutions",ylab="flow value",main=colnames(Bay)[flow],sub="mean")
+  plot(seq(from=n/stp,n,by=n/stp),sdevs,xlab="No of solutions",ylab="flow value",main=colnames(Bay)[flow],sub="st. devs")
+  
+  return(cbind(means, sdevs))
+  
+ }
+
+ par(mfrow=c(2,2))
+ stp   <- 1000  #step with increase of solutions
+ flow <- which(colnames(results_2009)==names(sort(colMaxs(results_2009),decreasing = TRUE)[1]))
+ result_maxflow <- convergence(Bay=results_2009, stp= 1000 ,flow=flow)
+ flow  <- which(colnames(results_2009)==names(sort(colMins(results_2009)[which(colMins(results_2009)>0)],decreasing = FALSE)[1]))
+ result_minflow <- convergence(Bay=results_2009, stp= 1000 ,flow=flow)
+ var(result_maxflow[2:50,"sdevs"])
+var(result_maxflow[2:1000,"sdevs"])
+ var(result_maxflow[2:1000,"sdevs"])/var(result_maxflow[2:50,"sdevs"])*100
+var(result_minflow[2:50,"sdevs"])
+ var(result_minflow[2:1000,"sdevs"])
+ var(result_minflow[2:1000,"sdevs"])/var(result_minflow[2:50,"sdevs"])*100
+ 
+  par(mfrow=c(2,2))
+ stp   <- 1000  #step with increase of solutions
+ flow <- which(colnames(results_2012)==names(sort(colMaxs(results_2012),decreasing = TRUE)[1]))
+ result_maxflow <- convergence(Bay=results_2012, stp= 1000 ,flow=flow)
+ flow  <- which(colnames(results_2012)==names(sort(colMins(results_2012)[which(colMins(results_2012)>0)],decreasing = FALSE)[1]))
+ result_minflow <- convergence(Bay=results_2012, stp= 1000 ,flow=flow)
+ var(result_maxflow[2:50,"sdevs"])
+ var(result_maxflow[2:1000,"sdevs"])
+var(result_maxflow[2:1000,"sdevs"])/var(result_maxflow[2:50,"sdevs"])*100
+ var(result_minflow[2:50,"sdevs"])
+ var(result_minflow[2:1000,"sdevs"])
+ var(result_minflow[2:1000,"sdevs"])/var(result_minflow[2:50,"sdevs"])*100
+ 
+   par(mfrow=c(2,2))
+ stp   <- 1000  #step with increase of solutions
+ flow <- which(colnames(results_2016)==names(sort(colMaxs(results_2016),decreasing = TRUE)[1]))
+ result_maxflow <- convergence(Bay=results_2016, stp= 1000 ,flow=flow)
+ flow  <- which(colnames(results_2016)==names(sort(colMins(results_2016)[which(colMins(results_2016)>0)],decreasing = FALSE)[1]))
+ result_minflow <- convergence(Bay=results_2016, stp= 1000 ,flow=flow)
+var(result_maxflow[2:50,"sdevs"])
+ var(result_maxflow[2:1000,"sdevs"])
+ var(result_maxflow[2:1000,"sdevs"])/var(result_maxflow[2:50,"sdevs"])*100
+ var(result_minflow[2:50,"sdevs"])
+ var(result_minflow[2:1000,"sdevs"])
+ var(result_minflow[2:1000,"sdevs"])/var(result_minflow[2:50,"sdevs"])*100
+ 
+    par(mfrow=c(2,2))
+ stp   <- 1000  #step with increase of solutions
+ flow <- which(colnames(results_2019)==names(sort(colMaxs(results_2019),decreasing = TRUE)[1]))
+ result_maxflow <- convergence(Bay=results_2019, stp= 1000 ,flow=flow)
+ flow  <- which(colnames(results_2019)==names(sort(colMins(results_2019)[which(colMins(results_2019)>0)],decreasing = FALSE)[1]))
+ result_minflow <- convergence(Bay=results_2019, stp= 1000 ,flow=flow)
+var(result_maxflow[2:50,"sdevs"])
+ var(result_maxflow[2:1000,"sdevs"])
+ var(result_maxflow[2:1000,"sdevs"])/var(result_maxflow[2:50,"sdevs"])*100
+ var(result_minflow[2:50,"sdevs"])
+ var(result_minflow[2:1000,"sdevs"])
+ var(result_minflow[2:1000,"sdevs"])/var(result_minflow[2:50,"sdevs"])*100
+ 
+    par(mfrow=c(2,2))
+ stp   <- 1000  #step with increase of solutions
+ flow <- which(colnames(results_2022)==names(sort(colMaxs(results_2022),decreasing = TRUE)[1]))
+ result_maxflow <- convergence(Bay=results_2022, stp= 1000 ,flow=flow)
+ flow  <- which(colnames(results_2022)==names(sort(colMins(results_2022)[which(colMins(results_2022)>0)],decreasing = FALSE)[1]))
+ result_minflow <- convergence(Bay=results_2022, stp= 1000 ,flow=flow)
+var(result_maxflow[2:50,"sdevs"])
+ var(result_maxflow[2:1000,"sdevs"])
+ var(result_maxflow[2:1000,"sdevs"])/var(result_maxflow[2:50,"sdevs"])*100
+ var(result_minflow[2:50,"sdevs"])
+ var(result_minflow[2:1000,"sdevs"])
+ var(result_minflow[2:1000,"sdevs"])/var(result_minflow[2:50,"sdevs"])*100
+ 
+ 
+
+```
+
+
+

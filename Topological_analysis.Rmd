@@ -1,0 +1,862 @@
+---
+title: "topological_analysis_clean"
+output: html_document
+date: "2025-01-15"
+---
+
+```{r setup, include=FALSE}
+require(readxl)
+require(dplyr)
+require(tidyr)
+library(multiweb)
+library(cowplot)
+library(patchwork)
+library(NetIndices)
+library(igraph)
+library(ggsignif)
+library(ggplot2)
+library(parallel)
+library(RColorBrewer)
+library(car)
+```
+
+## Buid the food webs from the matrix
+
+```{r, warning = F}
+
+mat <- read_excel("topological_files/Appendix_4.xlsx", sheet = "Interaction matrix", col_names = FALSE)
+mat <- mat[4:300, 7:ncol(mat)]
+mat <- as.matrix(mat)
+
+# Step 3: Set the first row and first column as headers
+colnames(mat) <- mat[1, ]
+rownames(mat) <- mat[, 1]
+
+# Remove the first row and first column
+mat <- mat[-1, -1]
+mat[which(mat == "1")] <- "1"
+mat[which(mat == "1*")] <- "1"
+mat[which(mat == "1**")] <- "1"
+mat[which(mat == "1!!")] <- "1"
+mat[which(mat == "1?")] <- "1"
+mat[which(mat == "1!")] <- "1"
+mat[which(mat == "2")] <- "1"
+mat[which(mat == "2*")] <- "0"
+mat[which(mat == "2**")] <- "0"
+mat[which(mat == "2!")] <- "0"
+mat[which(mat == "2!!")] <- "0"
+mat[which(mat == "2?")] <- "0"
+mat[which(mat == "3")] <- "0"
+mat[which(mat == "3?")] <- "0"
+mat[is.na(mat)] <- "0"
+
+zero_columns <- which(apply(mat, 2, function(x) all(x == "0")))
+
+if (length(zero_columns) > 0) {
+  print(paste("Column(s) with all elements as 0: ", zero_columns))
+} else {
+  print("No column has all elements as 0.")
+}
+
+# Extract non-zero interactions
+indices <- which(mat != 0, arr.ind = TRUE)
+
+# Create the general interaction list
+interaction_list <- data.frame(
+  resource = rownames(mat)[indices[, 1]],
+  consumer = colnames(mat)[indices[, 2]]
+)
+
+#  Read the three Excel files containing the list of species for each year. This files will also be the node files containing information about every species
+
+species_data <- read_excel("topological_files/Appendix_4.xlsx", sheet = "Species list")
+
+species_2009 <- species_data %>% 
+  filter(`Food web` == 2009)
+species_2012 <- species_data %>% 
+  filter(`Food web` == 2012)
+species_2016 <- species_data %>% 
+  filter(`Food web` == 2016)
+species_2019 <- species_data %>% 
+  filter(`Food web` == 2019)
+species_2022 <- species_data %>% 
+  filter(`Food web` == 2022)
+
+specieslist_2009 <- unique(species_2009$Species)
+specieslist_2012 <- unique(species_2012$Species)
+specieslist_2016 <- unique(species_2016$Species)
+specieslist_2019 <- unique(species_2019$Species)
+specieslist_2022 <- unique(species_2022$Species)
+
+
+# Filter main matrix to create submatrices for the present species of each year
+submatrix_2009 <- mat[row.names(mat) %in% species_2009$Species, colnames(mat) %in% species_2009$Species]
+submatrix_2012 <- mat[row.names(mat) %in% species_2012$Species, colnames(mat) %in% species_2012$Species]
+submatrix_2016 <- mat[row.names(mat) %in% species_2016$Species, colnames(mat) %in% species_2016$Species]
+submatrix_2019 <- mat[row.names(mat) %in% species_2019$Species, colnames(mat) %in% species_2019$Species]
+submatrix_2022 <- mat[row.names(mat) %in% species_2022$Species, colnames(mat) %in% species_2022$Species]
+
+
+# Get indices of non-zero elements
+indices_2009 <- which(submatrix_2009 != 0, arr.ind = TRUE)
+indices_2012 <- which(submatrix_2012 != 0, arr.ind = TRUE)
+indices_2016 <- which(submatrix_2016 != 0, arr.ind = TRUE)
+indices_2019 <- which(submatrix_2019 != 0, arr.ind = TRUE)
+indices_2022 <- which(submatrix_2022 != 0, arr.ind = TRUE)
+
+
+# Create a list of consumer and prey interactions
+interaction_list2009 <- data.frame(resource = rownames(submatrix_2009)[indices_2009[,1]],
+                               consumer = colnames(submatrix_2009)[indices_2009[,2]])
+
+interaction_list2012 <- data.frame(resource = rownames(submatrix_2012)[indices_2012[,1]],
+                               consumer = colnames(submatrix_2012)[indices_2012[,2]])
+
+interaction_list2016 <- data.frame(resource = rownames(submatrix_2016)[indices_2016[,1]],
+                               consumer = colnames(submatrix_2016)[indices_2016[,2]])
+
+interaction_list2019 <- data.frame(resource = rownames(submatrix_2019)[indices_2019[,1]],
+                               consumer = colnames(submatrix_2019)[indices_2019[,2]])
+
+interaction_list2022 <- data.frame(resource = rownames(submatrix_2022)[indices_2022[,1]],
+                               consumer = colnames(submatrix_2022)[indices_2022[,2]])
+
+
+links_2009 = interaction_list2009
+nodes_2009 = specieslist_2009
+
+links_2012 = interaction_list2012
+nodes_2012 = specieslist_2012
+
+links_2016 = interaction_list2016
+nodes_2016 = specieslist_2016
+
+links_2019 = interaction_list2019
+nodes_2019 = specieslist_2019
+
+links_2022 = interaction_list2022
+nodes_2022 = specieslist_2022
+
+
+#build the food web
+
+net_2009 = graph_from_data_frame(d=links_2009, vertices=nodes_2009, directed = TRUE)
+net_2012 = graph_from_data_frame(d=links_2012, vertices=nodes_2012, directed = TRUE)
+net_2016 = graph_from_data_frame(d=links_2016, vertices=nodes_2016, directed = TRUE)
+net_2019 = graph_from_data_frame(d=links_2019, vertices=nodes_2019, directed = TRUE)
+net_2022 = graph_from_data_frame(d=links_2022, vertices=nodes_2022, directed = TRUE)
+
+# basal species 
+V(net_2009)$name[degree(net_2009, mode="in")==0]
+# top predators
+V(net_2009)$name[degree(net_2009, mode="out")==0]
+#netmatrix_2009 <- get.adjacency(net_2009, sparse=F)
+#heatmap(netmatrix_2009, Rowv=NA, Colv=NA, scale="none")
+
+# basal species 
+V(net_2012)$name[degree(net_2012, mode="in")==0]
+# top predators
+V(net_2012)$name[degree(net_2012, mode="out")==0]
+#netmatrix_2012 <- get.adjacency(net_2012, sparse=F)
+#heatmap(netmatrix_2012, Rowv=NA, Colv=NA, scale="none")
+
+# basal species 
+V(net_2016)$name[degree(net_2016, mode="in")==0]
+# top predators
+V(net_2016)$name[degree(net_2016, mode="out")==0]
+netmatrix_2016 <- get.adjacency(net_2016, sparse=F)
+#heatmap(netmatrix_2016, Rowv=NA, Colv=NA, scale="none")
+
+V(net_2019)$name[degree(net_2019, mode="in")==0]
+# top predators
+V(net_2019)$name[degree(net_2019, mode="out")==0]
+netmatrix_2019 <- get.adjacency(net_2019, sparse=F)
+#heatmap(netmatrix_2016, Rowv=NA, Colv=NA, scale="none")
+
+V(net_2022)$name[degree(net_2022, mode="in")==0]
+# top predators
+V(net_2022)$name[degree(net_2022, mode="out")==0]
+netmatrix_2022 <- get.adjacency(net_2022, sparse=F)
+#heatmap(netmatrix_2016, Rowv=NA, Colv=NA, scale="none")
+
+```
+
+
+#Calculation of topological metrics
+```{r}
+# Compute QSS for each year
+QS_2009 <- calc_QSS(net_2009)
+QS_2012 <- calc_QSS(net_2012)
+QS_2016 <- calc_QSS(net_2016)
+QS_2019 <- calc_QSS(net_2019)
+QS_2022 <- calc_QSS(net_2022)
+
+QSS_2009=QS_2009$QSS
+QSS_2012=QS_2012$QSS
+QSS_2016=QS_2016$QSS
+QSS_2019=QS_2019$QSS
+QSS_2022=QS_2022$QSS
+
+MEing_2009=QS_2009$MEing
+MEing_2012=QS_2012$MEing
+MEing_2016=QS_2016$MEing
+MEing_2019=QS_2019$MEing
+MEing_2022=QS_2022$MEing
+
+# Calculate topological indices
+topological_indices_09 <- calcTopologicalIndices(net_2009)
+topological_indices_12 <- calcTopologicalIndices(net_2012)
+topological_indices_16 <- calcTopologicalIndices(net_2016)
+topological_indices_19 <- calcTopologicalIndices(net_2019)
+topological_indices_22 <- calcTopologicalIndices(net_2022)
+
+Mod_09 <- calc_modularity(net_2009)
+Mod_12 <- calc_modularity(net_2012)
+Mod_16 <- calc_modularity(net_2016)
+Mod_19 <- calc_modularity(net_2019)
+Mod_22 <- calc_modularity(net_2022)
+
+Coh_09 <- calc_incoherence(net_2009)
+Coh_12 <- calc_incoherence(net_2012)
+Coh_16 <- calc_incoherence(net_2016)
+Coh_19 <- calc_incoherence(net_2019)
+Coh_22 <- calc_incoherence(net_2022)
+
+# Create a data frame combining all indices including QSS
+topological <- rbind(
+    cbind(t(topological_indices_09),
+    t(topological_indices_12),
+    t(topological_indices_16),
+    t(topological_indices_19),
+    t(topological_indices_22)),
+    Modularity = c(Mod_09, Mod_12, Mod_16, Mod_19, Mod_22))
+    
+    
+# Assign column names
+colnames(topological) <- c("2009", "2012", "2016", "2019", "2022")
+
+# Convert to data frame
+topological <- as.data.frame(topological)
+topological <- format(topological, scientific = FALSE)
+
+# Convert to long format
+data_long <- topological %>%
+  mutate(Index = row.names(topological)) %>%
+  pivot_longer(cols = c("2009", "2012", "2016", "2019", "2022"), names_to = "Network", values_to = "Value")
+
+# Convert Year and Value to factor
+data_long$Year <- factor(data_long$Network)
+data_long$Value <- as.numeric(data_long$Value)
+
+```
+
+#Plot topological indices
+```{r, echo = F, fig.width = 9, fig.height=8, warning = F}
+# Filter out specific indices
+data_filtered <- data_long %>%
+  filter(Index %in% c("Size", "LD","Connectance","LOmnivory", "TLmean", "Modularity"))
+
+# Assuming data_filtered$Index is your variable to facet by, 
+# specify the order of levels
+desired_order <- c("Size", "LD","Connectance","LOmnivory", "TLmean", "Modularity")  # replace with your desired order
+data_filtered$Index <- factor(data_filtered$Index, levels = desired_order)
+
+# Rename facet labels with A, B, C, D, ensuring they are fully left-aligned
+label_map <- c("Size"= "Nodes",
+               "LD"= "Link density",
+  "Connectance" = "Connectance",
+               "LOmnivory" = "Level of Omnivory",
+               "TLmean" = "Mean Trophic Level",
+              "Modularity" = "Modularity")
+
+data_filtered$Index <- factor(data_filtered$Index, levels = desired_order, labels = label_map)
+
+# Now create the plot
+p <- ggplot(data_filtered, aes(x = Year, y = Value, color = Year, group = 1)) +
+  geom_point(size = 5, alpha = 0.7) +
+ # geom_line(color = "black", linetype = "dotted") +
+  scale_color_brewer(palette = "Set1") +  
+  scale_x_discrete() + 
+  facet_wrap(~ Index, scales = "free", ncol = 3) +
+  labs(title = "", x = "Year", y = "Value") +
+  theme_cowplot(12) +
+  theme(
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    axis.text.x = element_text(hjust = 1, size = 12),
+    axis.text.y = element_text(size = 12),
+    strip.text.x = element_text(size = 12),  # Make facet labels bold
+    strip.background = element_rect(fill = "grey90"),
+    panel.background = element_blank(), plot.background = element_blank())
+
+
+print(p)
+
+```
+
+#Compute B dissimilarity
+```{r}
+topological_2 <- as.data.frame(t(topological))
+topological_2[] <- lapply(topological_2, as.numeric)
+
+# Function to calculate percentage difference
+calc_percentage_diff <- function(a, b) {
+  return(((b - a) / a) * 100)
+}
+
+# Initialize an empty list to store results
+percentage_diff_list <- list()
+
+# List of metrics to calculate (you can add more metrics here)
+metrics_to_calculate <- c("Size", "Connectance","LOmnivory", "TLmean",  "Modularity")
+
+# Loop through each metric and calculate the percentage difference between consecutive years
+for (metric in metrics_to_calculate) {
+  # Get the list of years in sequence for comparison
+  years <- c(2009, 2012, 2016, 2019, 2022)
+  
+  # Loop over consecutive years (y1 with y2, y2 with y3, etc.)
+  for (i in 1:(length(years) - 1)) {
+    year1 <- years[i]
+    year2 <- years[i + 1]
+    
+    # Get the values for year1 and year2
+    value1 <- topological_2[[metric]][which(rownames(topological_2) == as.character(year1))]
+    value2 <- topological_2[[metric]][which(rownames(topological_2) == as.character(year2))]
+    
+    # Calculate the percentage difference
+    perc_diff <- calc_percentage_diff(value1, value2)
+    
+    # Append the result to the list
+    percentage_diff_list[[length(percentage_diff_list) + 1]] <- data.frame(
+      Metric = metric,
+      Year1 = year1,
+      Year2 = year2,
+      Percent_Difference = perc_diff
+    )
+  }
+}
+
+# Combine the list of data frames into a single data frame
+percentage_diff_df <- do.call(rbind, percentage_diff_list)
+
+percentage_diff_df$Percent_Difference = round(percentage_diff_df$Percent_Difference, digits = 3)
+
+# Print the result
+print(percentage_diff_df)
+
+write.csv(percentage_diff_df, file = "~/phD/WP1_TemporalFW/METAWEB/beta_dissimilarity_topological.csv", row.names = FALSE)
+```
+
+
+#Curveball algorithm
+```{r, echo = F, fig.width = 10, fig.height=25, warning = F, message = F}
+# Calculate topological indices and add MeanTrophicSimilarity for net_2009
+websTbl <- calcTopologicalIndices(net_2009)
+websTbl <- bind_cols(websTbl, calc_QSS(net_2009, 48)) %>% mutate(Network = "2009")
+
+lred <- curve_ball(net_2009,1000)
+curveBallNets <- calcTopologicalIndices(lred,ncores=48) %>% mutate(Network="2009")
+
+tp0 <- calcModularitySWnessZScore(net_2009,lred,ncores=48)
+tp <- mutate(tp0$da, Network="2009")
+wt1 <- inner_join(websTbl,tp)
+cb1 <- tp0$sims %>% select(modularity)
+curveBallNets_1 <- bind_cols(curveBallNets, cb1)
+
+# Calculate topological indices and add MeanTrophicSimilarity for net_2012
+websTbl2 <- calcTopologicalIndices(net_2012)
+websTbl2 <- bind_cols(websTbl2, calc_QSS(net_2012, 48)) %>% mutate(Network="2012")
+
+# Simulate networks and calculate topological indices
+lred2 <- curve_ball(net_2012, 1000)
+curveBallNets2 <- calcTopologicalIndices(lred2, ncores=48) %>% mutate(Network="2012")
+
+# Calculate modularity and other indices
+tp02 <- calcModularitySWnessZScore(net_2012, lred2, ncores=48)
+tp2 <- mutate(tp02$da, Network="2012")
+wt12 <- inner_join(websTbl2, tp2)
+cb12 <- tp02$sims %>% select(modularity)
+curveBallNets2 <- bind_cols(curveBallNets2, cb12)
+
+# Calculate topological indices and add MeanTrophicSimilarity for net_2016
+websTbl3 <- calcTopologicalIndices(net_2016)
+websTbl3 <- bind_cols(websTbl3, calc_QSS(net_2016, 48)) %>% mutate(Network="2016")
+
+# Simulate networks and calculate topological indices
+lred3 <- curve_ball(net_2016, 1000)
+curveBallNets3 <- calcTopologicalIndices(lred3, ncores=48) %>% mutate(Network="2016")
+
+# Calculate modularity and other indices
+tp03 <- calcModularitySWnessZScore(net_2016, lred3, ncores=48)
+tp3 <- mutate(tp03$da, Network="2016")
+wt13 <- inner_join(websTbl3, tp3)
+cb13 <- tp03$sims %>% select(modularity)
+curveBallNets3 <- bind_cols(curveBallNets3, cb13)
+
+# Calculate topological indices and add MeanTrophicSimilarity for net_2016
+websTbl4 <- calcTopologicalIndices(net_2019)
+websTbl4 <- bind_cols(websTbl4, calc_QSS(net_2019, 48)) %>% mutate(Network="2019")
+
+# Simulate networks and calculate topological indices
+lred4 <- curve_ball(net_2019, 1000)
+curveBallNets4 <- calcTopologicalIndices(lred4, ncores=48) %>% mutate(Network="2019")
+
+# Calculate modularity and other indices
+tp04 <- calcModularitySWnessZScore(net_2019, lred4, ncores=48)
+tp4 <- mutate(tp04$da, Network="2019")
+wt14 <- inner_join(websTbl4, tp4)
+cb14 <- tp04$sims %>% select(modularity)
+curveBallNets4 <- bind_cols(curveBallNets4, cb14)
+curveBallNets4 <- curveBallNets4 %>%
+  mutate(Network = "2019")
+
+# Calculate topological indices and add MeanTrophicSimilarity for net_2016
+websTbl5 <- calcTopologicalIndices(net_2022)
+websTbl5 <- bind_cols(websTbl5, calc_QSS(net_2022, 48)) %>% mutate(Network="2022")
+
+# Simulate networks and calculate topological indices
+lred5 <- curve_ball(net_2022, 1000)
+curveBallNets5 <- calcTopologicalIndices(lred5, ncores=48) %>% mutate(Network="2022")
+
+# Calculate modularity and other indices
+tp05 <- calcModularitySWnessZScore(net_2022, lred5, ncores=48)
+tp5 <- mutate(tp05$da, Network="2022")
+wt15 <- inner_join(websTbl5, tp5)
+cb15 <- tp05$sims %>% select(modularity)
+curveBallNets5 <- bind_cols(curveBallNets5, cb15)
+
+websTbl <- bind_rows(wt1,wt12, wt13, wt14, wt15)
+curveBallNets <- bind_rows(curveBallNets_1, curveBallNets2, curveBallNets3, curveBallNets4, curveBallNets5)
+
+pf <- curveBallNets %>%
+  group_by(Network) %>%
+  mutate(Network = factor(Network))
+
+#load(file= "~/phD/WP1_TemporalFW/METAWEB/Metaweb_R/Curveball.Rdata")
+
+# Summary of the data
+```
+
+
+
+#Manuscript plotting
+```{r}
+
+create_plot_with_significance <- function(data, variable, label, websTbl) {
+  library(ggplot2)
+  library(ggsignif)
+  library(dplyr)
+  library(cowplot)
+
+  Q <- quantile(data[[variable]], probs = c(0.25, 0.75), na.rm = TRUE)
+  iqr <- IQR(data[[variable]], na.rm = TRUE)
+  filtered_data <- data %>%
+    filter(
+      !!sym(variable) <= Q[2] + 1.5 * iqr,
+      !!sym(variable) >= Q[1] - 1.5 * iqr
+    )
+
+  kruskal_result <- kruskal.test(data[[variable]] ~ data$Network)
+  pairwise_result <- pairwise.wilcox.test(data[[variable]], data$Network, p.adjust.method = "BH")
+
+  sig_pairs <- pairwise_result$p.value
+  significant_pairs <- which(sig_pairs < 0.05, arr.ind = TRUE)
+  
+p <- ggplot(filtered_data, aes(x = Network, y = .data[[variable]], color = Network)) +
+    geom_point(size = 1.5, alpha = 0.6, position = position_jitter(width = 0.2),  show.legend = FALSE) +  # Simulated data
+    geom_point(data = websTbl, aes(x = Network, y = .data[[variable]]),  # Empirical data
+               shape = 21, fill = "black", size = 2.5, inherit.aes = FALSE, show.legend = FALSE) +  # Hide from legend
+    stat_summary(fun = median, fun.min = median, fun.max = median,
+                 geom = "crossbar", linewidth = 0.2, color = "black") +
+    scale_color_brewer(palette = "Set1") +  # Color scale for simulated data
+    xlab("") +
+    ylab("") +
+    ggtitle(label) +  # Title added here
+    theme_cowplot(12) +
+    theme(
+      plot.title = element_text(size = 12, color = "grey30", hjust = 0.5),
+      axis.title.x = element_blank(),
+      axis.title.y = element_text(size = 14),
+      axis.text = element_text(size = 12),
+      legend.position = "none",
+                # Adding light grey grid lines
+      panel.grid.major = element_line(color = "grey90", size = 0.5),  # Major grid lines in light grey
+      panel.grid.minor = element_line(color = "grey95", size = 0.5)# Reduce plot margins (top, right, bottom, left)
+
+    )
+
+
+  if (length(significant_pairs) > 0) {
+    y_pos <- max(filtered_data[[variable]], na.rm = TRUE) + 0.1 * IQR(filtered_data[[variable]], na.rm = TRUE)
+
+    p <- p + geom_signif(
+      comparisons = lapply(seq_len(nrow(significant_pairs)), function(i) {
+        c(rownames(sig_pairs)[significant_pairs[i, 1]],
+          colnames(sig_pairs)[significant_pairs[i, 2]])
+      }),
+      map_signif_level = TRUE,
+      textsize = 4,
+      color = "black",
+      y_position = y_pos
+    )
+  }
+
+  return(p)
+}
+
+indices_to_remove <- c("Links", "Components","nwTL", "nWC", "nWG", "nwV", "Basal", "Top", "MEing",  "PathLength", "Coherence","LOmnivory", "Generality", "Vulnerability", "Clustering", "TLmax", "GenSD", "VulSD", "Cannib", "QSS", "TrophSim", "MaxTrophSim", "Modularity",         "Top"   ,        "Basal"   ,      "Omnivory" ,     "Links"   ,  
+ "PathLength" ,   "Clustering"   , "Cannib"      ,  "TLmean"     ,   "TLmax"   ,       "Components",
+ "Vulnerability", "VulSD"     ,    "Generality" ,   "GenSD"     ,    "TrophSim"  ,    "MaxTrophSim"  , "modularity"  , 
+"QSS" ,          "MEing" )  # Replace with actual index names you want to remove
+
+names(websTbl)[names(websTbl) == "Modularity"] <- "modularity"
+
+# Filter out specific indices
+data_filtered <- data_long %>%
+  filter(!Index %in% indices_to_remove)
+
+# Assuming data_filtered$Index is your variable to facet by, 
+# specify the order of levels
+desired_order <- c("Size", "LD","Connectance")  # replace with your desired order
+data_filtered$Index <- factor(data_filtered$Index, levels = desired_order)
+
+# Rename facet labels with A, B, C, D, ensuring they are fully left-aligned
+label_map <- c("Size"= "Nodes (S)",
+               "LD"= "Link density (LD)",
+  "Connectance" = "Connectance (C)")
+
+data_filtered$Index <- factor(data_filtered$Index, levels = desired_order, labels = label_map)
+
+# Now create the plot
+p <- ggplot(data_filtered, aes(x = Year, y = Value, color = Year, group = 1)) +
+  geom_point(size = 4, alpha = 0.7) +
+  scale_color_brewer(palette = "Set1") +
+  scale_x_discrete() +
+  facet_wrap(~ Index, scales = "free", ncol = 1) + # free_y is important!
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.09)))  +
+  labs(x = "", y = "") +
+  theme_cowplot(12) +
+  theme(
+    axis.title.x = element_blank(),  # Remove the x-axis title
+    axis.title.y = element_text(size = 14),
+    axis.text.x = element_blank(),  # Remove the x-axis labels (years)
+    axis.ticks.x = element_line(size = 0.5),  # Keep the ticks on the x-axis
+    axis.text.y = element_text(size = 12),
+    strip.text.x = element_text(size = 12, color = "grey30"),  # Adjusted color of facet labels
+    strip.background = element_rect(fill = "transparent"),  # No background for facet titles
+    panel.background = element_blank(),
+    plot.background = element_blank(),
+    legend.position = "none",  # Remove legend
+    strip.text = element_text(size = 14, hjust = 0.5, face = "bold"),  # Centering and bolding facet titles
+    plot.margin = margin(7, 7, 7, 7),
+          # Adding light grey grid lines
+      panel.grid.major = element_line(color = "grey90", size = 0.5),  # Major grid lines in light grey
+      panel.grid.minor = element_line(color = "grey95", size = 0.5)# Reduce plot margins (top, right, bottom, left)
+  ) +
+  ggtitle("")  # Remove the main plot title (keeping facet titles)
+
+# Filter pf
+pf <- filter(pf, LOmnivory < 1.5)
+result_TLmean <- create_plot_with_significance(pf, "TLmean", "Mean trophic level (TL)", websTbl)
+result_LOmnivory <- create_plot_with_significance(pf, "LOmnivory", "Mean level of omnivory (LOmn)", websTbl)
+result_mod <- create_plot_with_significance(pf, "modularity", "Modularity (Mod)", websTbl)
+
+# Create the final plot
+final_plot <- (p + result_TLmean) / (result_LOmnivory + result_mod) +
+              plot_layout(ncol = 1, guides = "collect") &
+              theme(legend.position = "bottom", plot.margin = margin(7, 7, 7, 7))
+
+# Add custom labels to the plots (A, B, C, etc.)
+final_plot <- final_plot + plot_annotation(
+  tag_levels = 'A'  # This will automatically add labels A, B, C, etc.
+) &
+  theme(
+    plot.tag = element_text(
+      size = 14,       # Adjust font size of labels
+      face = "bold",   # Make labels bold
+      hjust = 0,       # Align labels to the left
+      vjust = 1        # Align labels to the top
+    )
+  )
+
+# Print the final plot
+print(final_plot)
+
+# Save the final plot
+ggsave("~/phD/WP1_TemporalFW/manuscript/topological_indices.png", final_plot, width = 9, height = 10)
+
+```
+
+#Pairwise test
+```{r}
+# Perform the Kruskal-Wallis test first
+kruskal_result <- kruskal.test(pf[["TLmean"]] ~ pf$Network)
+
+# If the global test is significant, run pairwise comparisons
+if (kruskal_result$p.value < 0.05) {
+  # Perform pairwise Wilcoxon test
+  pairwise_result <- pairwise.wilcox.test(pf[["TLmean"]], pf$Network, p.adjust.method = "BH")
+  
+  # Get the pairwise p-values
+  significant_pairs <- pairwise_result$p.value
+  
+  # Find the pairs with p-value < 0.05
+  significant_pairs_list <- which(significant_pairs < 0.05, arr.ind = TRUE)
+  
+  # Create a data frame to store significant pairs and their p-values
+  significant_df <- data.frame(
+    Group1 = rownames(significant_pairs)[significant_pairs_list[, 1]],
+    Group2 = colnames(significant_pairs)[significant_pairs_list[, 2]],
+    P_Value = significant_pairs[significant_pairs_list]
+  )
+  
+  # Print or return the data frame
+  print(significant_df)
+}
+
+```
+
+#Topological roles hard substrate
+```{r}
+
+
+species_2009$groups <- as.character(species_2009$Grouping)
+species_2012$groups <- as.character(species_2012$Grouping)
+species_2016$groups <- as.character(species_2016$Grouping)
+species_2019$groups <- as.character(species_2019$Grouping)
+species_2022$groups <- as.character(species_2022$Grouping)
+
+attributes2009 = species_2009
+attributes2012 = species_2012
+attributes2016 = species_2016
+attributes2019 = species_2019
+attributes2022 = species_2022
+
+attributes2009 <- attributes2009 %>%
+ rownames_to_column(var = "Species_number")
+
+modulos_2009 <- cluster_spinglass(net_2009)
+mod_2009 <- data.frame(Name="2009", Groups=length(modulos_2009$csize), Modularity=modulos_2009$modularity)
+
+nc <- detectCores()
+tR_2009 <- calc_topological_roles(net_2009, nsim=1000, ncores=nc)
+tR_2009$node = as.character(tR_2009$node)
+tR_2009_names <- tR_2009 %>%
+  left_join(attributes2009, by = c("node" = "Species_number"))%>%
+  rename(name = 4)
+
+topoRoles_2009 <- tR_2009_names %>% mutate(Network = "2009")
+
+hc_2009 <- plot_topological_roles(topoRoles_2009, net_2009, modulos_2009)
+hc_2009 <- merge(topoRoles_2009, hc_2009 , by = "name", all.x = TRUE)
+
+hc_2009 <- hc_2009 %>% mutate(modulo = modulos_2009$membership[name], Name = "2009")
+
+hard_substrate_Speciess_2009 <- attributes2009 %>%
+  filter(groups == "Hard-substrate") %>%
+  pull(Species)  # Extract the 'Species' column values
+tRoles_filtered_2009_HS <- hc_2009[hc_2009$name %in% hard_substrate_Speciess_2009, ]
+
+#classify_topological_roles(tRoles_filtered_2009, net_2009, plt = TRUE)
+
+#final_data_2009 = merge(tRoles_filtered_2009, hc_2009 , by = "Species", all.x = TRUE)
+
+# Summary table
+summary_table_HS_2009 <- tRoles_filtered_2009_HS %>%
+  summarise(
+    total_species = n(),  # Total number of species
+    modcon_count = sum(type == "modcon"),  # Number of 'modcon' species
+    modcon_proportion = modcon_count / total_species# Proportion of 'modcon' species
+  ) %>%
+  mutate(Year = "2009") %>%
+  mutate(Habitat = "HS")
+
+# Print the summary table
+print(summary_table_HS_2009)
+
+attributes2012 <- attributes2012 %>%
+  rownames_to_column(var = "Species_number")
+
+modulos_2012 <- cluster_spinglass(net_2012)
+mod_2012 <- data.frame(Name="2012", Groups=length(modulos_2012$csize), Modularity=modulos_2012$modularity)
+
+nc <- detectCores()
+tR_2012 <- calc_topological_roles(net_2012, nsim=1000, ncores=nc)
+tR_2012$node = as.character(tR_2012$node)
+tR_2012_names <- tR_2012 %>%
+  left_join(attributes2012, by = c("node" = "Species_number"))%>%
+  rename(name = 4)
+
+topoRoles_2012 <- tR_2012_names %>% mutate(Network = "2012")
+
+hc_2012 <- plot_topological_roles(topoRoles_2012, net_2012, modulos_2012)
+hc_2012 <- merge(topoRoles_2012, hc_2012 , by = "name", all.x = TRUE)
+
+hc_2012 <- hc_2012 %>% mutate(modulo = modulos_2012$membership[name], Name = "2012")
+
+hard_substrate_Speciess_2012 <- attributes2012 %>%
+  filter(groups == "Hard-substrate") %>%
+  pull(Species)  # Extract the 'Species' column values
+tRoles_filtered_2012_HS <- hc_2012[hc_2012$name %in% hard_substrate_Speciess_2012, ]
+
+#classify_topological_roles(tRoles_filtered_2012, net_2012, plt = TRUE)
+
+#final_data_2012 = merge(tRoles_filtered_2012, hc_2012 , by = "Species", all.x = TRUE)
+
+# Summary table
+summary_table_HS_2012 <- tRoles_filtered_2012_HS %>%
+  summarise(
+    total_species = n(),  # Total number of species
+    modcon_count = sum(type == "modcon"),  # Number of 'modcon' species
+    modcon_proportion = modcon_count / total_species# Proportion of 'modcon' species
+  ) %>%
+  mutate(Year = "2012") %>%
+  mutate(Habitat = "HS")
+
+# Print the summary table
+print(summary_table_HS_2012)
+
+attributes2016 <- attributes2016 %>%
+  rownames_to_column(var = "Species_number")
+
+modulos_2016 <- cluster_spinglass(net_2016)
+mod_2016 <- data.frame(Name="2016", Groups=length(modulos_2016$csize), Modularity=modulos_2016$modularity)
+
+nc <- detectCores()
+tR_2016 <- calc_topological_roles(net_2016, nsim=1000, ncores=nc)
+tR_2016$node = as.character(tR_2016$node)
+tR_2016_names <- tR_2016 %>%
+  left_join(attributes2016, by = c("node" = "Species_number"))%>%
+  rename(name = 4)
+
+topoRoles_2016 <- tR_2016_names %>% mutate(Network = "2016")
+
+hc_2016 <- plot_topological_roles(topoRoles_2016, net_2016, modulos_2016)
+hc_2016 <- merge(topoRoles_2016, hc_2016 , by = "name", all.x = TRUE)
+
+hc_2016 <- hc_2016 %>% mutate(modulo = modulos_2016$membership[name], Name = "2016")
+
+hard_substrate_Speciess_2016 <- attributes2016 %>%
+  filter(groups == "Hard-substrate") %>%
+  pull(Species)  # Extract the 'Species' column values
+tRoles_filtered_2016_HS <- hc_2016[hc_2016$name %in% hard_substrate_Speciess_2016, ]
+
+#classify_topological_roles(tRoles_filtered_2016, net_2016, plt = TRUE)
+
+#final_data_2016 = merge(tRoles_filtered_2016, hc_2016 , by = "Species", all.x = TRUE)
+
+# Summary table
+summary_table_HS_2016 <- tRoles_filtered_2016_HS %>%
+  summarise(
+    total_species = n(),  # Total number of species
+    modcon_count = sum(type == "modcon"),  # Number of 'modcon' species
+    modcon_proportion = modcon_count / total_species# Proportion of 'modcon' species
+  ) %>%
+  mutate(Year = "2016") %>%
+  mutate(Habitat = "HS")
+
+# Print the summary table
+print(summary_table_HS_2016)
+
+attributes2019 <- attributes2019 %>%
+  rownames_to_column(var = "Species_number")
+
+modulos_2019 <- cluster_spinglass(net_2019)
+mod_2019 <- data.frame(Name="2019", Groups=length(modulos_2019$csize), Modularity=modulos_2019$modularity)
+
+nc <- detectCores()
+tR_2019 <- calc_topological_roles(net_2019, nsim=1000, ncores=nc)
+tR_2019$node = as.character(tR_2019$node)
+tR_2019_names <- tR_2019 %>%
+  left_join(attributes2019, by = c("Node" = "Species_number"))%>%
+  rename(name = 4)
+
+topoRoles_2019 <- tR_2019_names %>% mutate(Network = "2019")
+
+hc_2019 <- plot_topological_roles(topoRoles_2019, net_2019, modulos_2019)
+hc_2019 <- merge(topoRoles_2019, hc_2019 , by = "name", all.x = TRUE)
+
+hc_2019 <- hc_2019 %>% mutate(modulo = modulos_2019$membership[name], Name = "2019")
+
+hard_substrate_Speciess_2019 <- attributes2019 %>%
+  filter(groups == "Hard-substrate") %>%
+  pull(Species)  # Extract the 'Species' column values
+tRoles_filtered_2019_HS <- hc_2019[hc_2019$name %in% hard_substrate_Speciess_2019, ]
+
+#classify_topological_roles(tRoles_filtered_2019, net_2019, plt = TRUE)
+
+#final_data_2019 = merge(tRoles_filtered_2019, hc_2019 , by = "Species", all.x = TRUE)
+
+# Summary table
+summary_table_HS_2019 <- tRoles_filtered_2019_HS %>%
+  summarise(
+    total_species = n(),  # Total number of species
+    modcon_count = sum(type == "modcon"),  # Number of 'modcon' species
+    modcon_proportion = modcon_count / total_species# Proportion of 'modcon' species
+  ) %>%
+  mutate(Year = "2019") %>%
+  mutate(Habitat = "HS")
+
+# Print the summary table
+print(summary_table_HS_2019)
+
+
+attributes2022 <- attributes2022 %>%
+  rownames_to_column(var = "Species_number")
+
+modulos_2022 <- cluster_spinglass(net_2022)
+mod_2022 <- data.frame(Name="2022", Groups=length(modulos_2022$csize), Modularity=modulos_2022$modularity)
+
+nc <- detectCores()
+tR_2022 <- calc_topological_roles(net_2022, nsim=1000, ncores=nc)
+tR_2022$node = as.character(tR_2022$node)
+tR_2022_names <- tR_2022 %>%
+  left_join(attributes2022, by = c("node" = "Species_number"))%>%
+  rename(name = 4)
+
+topoRoles_2022 <- tR_2022_names %>% mutate(Network = "2022")
+
+hc_2022 <- plot_topological_roles(topoRoles_2022, net_2022, modulos_2022)
+hc_2022 <- merge(topoRoles_2022, hc_2022 , by = "name", all.x = TRUE)
+
+hc_2022 <- hc_2022 %>% mutate(modulo = modulos_2022$membership[name], Name = "2022")
+
+hard_substrate_Speciess_2022 <- attributes2022 %>%
+  filter(groups == "Hard-substrate") %>%
+  pull(Species)  # Extract the 'Species' column values
+tRoles_filtered_2022_HS <- hc_2022[hc_2022$name %in% hard_substrate_Speciess_2022, ]
+
+#classify_topological_roles(tRoles_filtered_2022, net_2022, plt = TRUE)
+
+#final_data_2022 = merge(tRoles_filtered_2022, hc_2022 , by = "Species", all.x = TRUE)
+
+# Summary table
+summary_table_HS_2022 <- tRoles_filtered_2022_HS %>%
+  summarise(
+    total_species = n(),  # Total number of species
+    modcon_count = sum(type == "modcon"),  # Number of 'modcon' species
+    modcon_proportion = modcon_count / total_species# Proportion of 'modcon' species
+  ) %>%
+  mutate(Year = "2022") %>%
+  mutate(Habitat = "HS")
+
+# Print the summary table
+print(summary_table_HS_2022)
+
+# Now, merge all the summary tables
+merged_summary_HS <- bind_rows(
+  summary_table_HS_2009,
+  summary_table_HS_2012,
+  summary_table_HS_2016,
+  summary_table_HS_2019,
+  summary_table_HS_2022
+)
+
+# Print the merged summary table
+print(merged_summary_HS)
+
+
+```
+
+
