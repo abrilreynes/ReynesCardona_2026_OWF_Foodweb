@@ -15,7 +15,6 @@ The associated article can be found [here](https://doi.org/xxxxx) (replace with 
 | `topological_files/`       | Adjacency matrices and data for topological food webs                       |
 | `LIM_analysis.Rmd`         | Code for LIM-based quantitative food web analysis                           |
 | `Topological_analysis.Rmd` | Code for topological food web metrics and individual topological roles      |
-| `NMDS_analysis.Rmd`        | Code for NMDS ordination and community-level comparisons                    |
 | `code.Rproj`               | RStudio project file                                                        |
 | `LICENSE`                  | License for reuse (e.g., MIT)                                               |
 | `README.md`                | This file                                                                   |
