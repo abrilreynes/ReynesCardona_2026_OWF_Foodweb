@@ -7,7 +7,6 @@ date: "2025-01-15"
 ```{r LIM SET UP, include = F, warning=F}
 
 setwd("~/phD/WP1_TemporalFW/manuscript/code")
-require(LIM)
 library(LIM)
 library(DT)
 library(NetIndices)
