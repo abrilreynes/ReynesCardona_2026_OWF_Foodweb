@@ -1,4 +1,4 @@
-## 📘 Code for Manuscript XXXXX
+## 📘 Manuscript title XXX
 
 This repository contains the full codebase and data used in the analyses presented in the manuscript **"XXXXX"** (replace with your actual title). It includes RMarkdown scripts, input files, and helper functions used to reproduce all results presented in the paper.
 
