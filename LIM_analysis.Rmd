@@ -23,19 +23,17 @@ source("functions/network_indices.R")
 source("functions/sample_save_Lims.R")
 #load("LIM_data.Rdata")
 
-
-
 ```
 
 #LIM set up and validity of the solution
 ```{r}
 ############################ 2009 ##########################
 # File path for 2009 data
-abrilfw09 <- "input_files_LIM/FW_2009_bact.txt"
-abrilfw12 <- "input_files_LIM/FW_2012_bact.txt"
-abrilfw16 <- "input_files_LIM/FW_2016_bact.txt"
-abrilfw19 <- "input_files_LIM/FW_2019_bact.txt"
-abrilfw22 <- "input_files_LIM/FW_2022_bact.txt"
+abrilfw09 <- "Input_files_LIM/FW_2009_bact.txt"
+abrilfw12 <- "Input_files_LIM/FW_2012_bact.txt"
+abrilfw16 <- "Input_files_LIM/FW_2016_bact.txt"
+abrilfw19 <- "Input_files_LIM/FW_2019_bact.txt"
+abrilfw22 <- "Input_files_LIM/FW_2022_bact.txt"
 
 # Read data
 readLIM.abril09 <- LIM::Read(file = abrilfw09, verbose = TRUE, checkLinear = TRUE)
@@ -100,8 +98,13 @@ output_directory <- "code"
 calculate_and_save_batches(LIMs, output_directory, nsamp_total =1800, batch_size =1800)
 ```
 
+#Load the results from the LIM repetitions
 ```{r}
-load("LIM_data.Rdata")
+load("Results_sample_LIM/results_2009.Rdata")
+load("Results_sample_LIM/results_2012.Rdata")
+load("Results_sample_LIM/results_2016.Rdata")
+load("Results_sample_LIM/results_2019.Rdata")
+load("Results_sample_LIM/results_2022.Rdata")
 ```
 
 #Visualize flow ranges
@@ -135,16 +138,6 @@ axis(2, las=2)
 
 ```
 
-
-##Load the results from sample LIM
-```{r}
-load("Results_sample_LIM/results_2009.Rdata")
-load("Results_sample_LIM/results_2012.Rdata")
-load("Results_sample_LIM/results_2016.Rdata")
-load("Results_sample_LIM/results_2019.Rdata")
-load("Results_sample_LIM/results_2022.Rdata")
-
-```
 
 #Calculate the variables for each repetition
 

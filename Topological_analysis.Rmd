@@ -7,7 +7,7 @@ date: "2025-01-15"
 ```{r setup, include=FALSE}
 require(readxl)
 require(dplyr)
-require(tidyr)
+library(tidyr)
 library(multiweb)
 library(cowplot)
 library(patchwork)
@@ -18,13 +18,16 @@ library(ggplot2)
 library(parallel)
 library(RColorBrewer)
 library(car)
+library(radiant)
+source("functions/network_fun.R")
+
 ```
 
 ## Buid the food webs from the matrix
 
 ```{r, warning = F}
 
-mat <- read_excel("topological_files/Appendix_4.xlsx", sheet = "Interaction matrix", col_names = FALSE)
+mat <- read_excel("topological_files/Topological_matrix.xlsx", sheet = "Interaction matrix", col_names = FALSE)
 mat <- mat[4:300, 7:ncol(mat)]
 mat <- as.matrix(mat)
 
@@ -69,7 +72,7 @@ interaction_list <- data.frame(
 
 #  Read the three Excel files containing the list of species for each year. This files will also be the node files containing information about every species
 
-species_data <- read_excel("topological_files/Appendix_4.xlsx", sheet = "Species list")
+species_data <- read_excel("topological_files/Topological_matrix.xlsx", sheet = "Species list")
 
 species_2009 <- species_data %>% 
   filter(`Food web` == 2009)
@@ -345,12 +348,16 @@ percentage_diff_df$Percent_Difference = round(percentage_diff_df$Percent_Differe
 # Print the result
 print(percentage_diff_df)
 
-write.csv(percentage_diff_df, file = "~/phD/WP1_TemporalFW/METAWEB/beta_dissimilarity_topological.csv", row.names = FALSE)
+```
+
+#Load curveball data
+```{r}
+load("Topological_files/Curveball.Rdata")
 ```
 
 
 #Curveball algorithm
-```{r, echo = F, fig.width = 10, fig.height=25, warning = F, message = F}
+```{r, echo = F, fig.width = 10, fig.height=25, warning = F, message = F, eval = F}
 # Calculate topological indices and add MeanTrophicSimilarity for net_2009
 websTbl <- calcTopologicalIndices(net_2009)
 websTbl <- bind_cols(websTbl, calc_QSS(net_2009, 48)) %>% mutate(Network = "2009")
@@ -433,11 +440,8 @@ pf <- curveBallNets %>%
   group_by(Network) %>%
   mutate(Network = factor(Network))
 
-#load(file= "~/phD/WP1_TemporalFW/METAWEB/Metaweb_R/Curveball.Rdata")
-
 # Summary of the data
 ```
-
 
 
 #Manuscript plotting
@@ -583,9 +587,6 @@ final_plot <- final_plot + plot_annotation(
 # Print the final plot
 print(final_plot)
 
-# Save the final plot
-ggsave("~/phD/WP1_TemporalFW/manuscript/topological_indices.png", final_plot, width = 9, height = 10)
-
 ```
 
 #Pairwise test
@@ -619,7 +620,6 @@ if (kruskal_result$p.value < 0.05) {
 
 #Topological roles hard substrate
 ```{r}
-
 
 species_2009$groups <- as.character(species_2009$Grouping)
 species_2012$groups <- as.character(species_2012$Grouping)
@@ -769,7 +769,7 @@ nc <- detectCores()
 tR_2019 <- calc_topological_roles(net_2019, nsim=1000, ncores=nc)
 tR_2019$node = as.character(tR_2019$node)
 tR_2019_names <- tR_2019 %>%
-  left_join(attributes2019, by = c("Node" = "Species_number"))%>%
+  left_join(attributes2019, by = c("node" = "Species_number"))%>%
   rename(name = 4)
 
 topoRoles_2019 <- tR_2019_names %>% mutate(Network = "2019")
