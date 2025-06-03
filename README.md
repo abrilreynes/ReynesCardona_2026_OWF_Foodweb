@@ -2,7 +2,7 @@
 
   <img src="Icon.png" alt="OWF Icon" width="120" style="vertical-align:middle; margin-right:15px;"/> 
 
-This repository contains the full codebase and data used in the analyses presented in the manuscript **"XXXXX"** (replace with your actual title). It includes RMarkdown scripts, input files, and helper functions used to reproduce all results presented in the paper.
+This repository contains the full codebase and data used in the analyses presented in the manuscript **"XXXXX"**. It includes RMarkdown scripts, input files, and helper functions used to reproduce all results presented in the paper.
 
 The associated article can be found [here](https://doi.org/xxxxx) (replace with the actual DOI or journal link).
 
