@@ -137,6 +137,17 @@ axis(2, las=2)
 
 ```
 
+
+##Load the results from sample LIM
+```{r}
+load("Results_sample_LIM/results_2009.Rdata")
+load("Results_sample_LIM/results_2012.Rdata")
+load("Results_sample_LIM/results_2016.Rdata")
+load("Results_sample_LIM/results_2019.Rdata")
+load("Results_sample_LIM/results_2022.Rdata")
+
+```
+
 #Calculate the variables for each repetition
 
 **Resp:** Value of the flow going to DIC **Uptake:** All flows going to that compartment **Assimilation:** Uptake minus the flows going to detritus.
