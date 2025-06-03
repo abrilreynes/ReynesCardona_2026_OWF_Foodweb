@@ -3,7 +3,7 @@
 This repository contains the full codebase and data used in the analyses presented in the manuscript **"XXXXX"** (replace with your actual title). It includes RMarkdown scripts, input files, and helper functions used to reproduce all results presented in the paper.
 
 The associated article can be found [here](https://doi.org/xxxxx) (replace with the actual DOI or journal link).
-![ChatGPT Image Jun 3, 2025, 11_49_54 AM](https://github.com/user-attachments/assets/c3e80672-9f84-4e56-84ad-d3865c4f75aa)
+<img src="Icon.png" alt="OWF Food Web Icon" width="60"/>
 ---
 
 ## 📁 Repository Structure
