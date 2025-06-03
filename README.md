@@ -11,7 +11,7 @@ The associated article can be found [here](https://doi.org/xxxxx) (replace with 
 | File or Folder             | Description                                                                         |
 |----------------------------|-------------------------------------------------------------------------------------|
 | `functions/`               | Custom R functions used in the Rcode                                                |
-| `Input_files_LIM/`         | Input files for Linear Inverse Modelling (LIM)                                      |
+| `Input_files_LIM/`         | Input files for Linear Inverse Modelling (LIM) and stock and compartment data       |
 | `Results_sample_LIM/`      | Results form the LIM repetitions as Rdata files                                     |
 | `Topological_files/`       | Adjacency matrices, data for topological food webs and species topological roles    |
 | `LIM_analysis.Rmd`         | Code for LIM-based quantitative food web analysis                                   |
