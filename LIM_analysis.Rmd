@@ -51,27 +51,27 @@ LIM.abril22 <- Setup(readLIM.abril22)
 
 # Calculate solution and check validity of the solution
 Solldeiabril09 <- Ldei(LIM.abril09, verbose = TRUE)
-Rangesabril09 <- lim.ranges(LIM.abril09)
+#Rangesabril09 <- lim.ranges(LIM.abril09)
 any((LIM.abril09$A %*% Solldeiabril09$X - LIM.abril09$B) > 1e-8)
 any((LIM.abril09$G %*% Solldeiabril09$X - LIM.abril09$H) < (-1e-8))
 
 Solldeiabril12 <- Ldei(LIM.abril12, verbose = TRUE)
-Rangesabril12 <- lim.ranges(LIM.abril12)
+#Rangesabril12 <- lim.ranges(LIM.abril12)
 any((LIM.abril12$A %*% Solldeiabril12$X - LIM.abril12$B) > 1e-8)
 any((LIM.abril12$G %*% Solldeiabril12$X - LIM.abril12$H) < (-1e-8))
 
 Solldeiabril16 <- Ldei(LIM.abril16, verbose = TRUE)
-Rangesabril16 <- lim.ranges(LIM.abril16)
+#Rangesabril16 <- lim.ranges(LIM.abril16)
 any((LIM.abril16$A %*% Solldeiabril16$X - LIM.abril16$B) > 1e-8)
 any((LIM.abril16$G %*% Solldeiabril16$X - LIM.abril16$H) < (-1e-8))
 
 Solldeiabril19 <- Ldei(LIM.abril19, verbose = TRUE)
-Rangesabril19 <- lim.ranges(LIM.abril19)
+#Rangesabril19 <- lim.ranges(LIM.abril19)
 any((LIM.abril19$A %*% Solldeiabril19$X - LIM.abril19$B) > 1e-8)
 any((LIM.abril19$G %*% Solldeiabril19$X - LIM.abril19$H) < (-1e-8))
 
 Solldeiabril22 <- Ldei(LIM.abril22, verbose = TRUE)
-Rangesabril22 <- lim.ranges(LIM.abril22)
+#Rangesabril22 <- lim.ranges(LIM.abril22)
 any((LIM.abril22$A %*% Solldeiabril22$X - LIM.abril22$B) > 1e-8)
 any((LIM.abril22$G %*% Solldeiabril22$X - LIM.abril22$H) < (-1e-8))
 
@@ -258,6 +258,192 @@ colnames(results_2022_stats) <- c("mean_2022", "sd_2022")
 
 ```
 
+#Production and flows plot
+```{r}
+# =============================
+# Prepare turbine variables plot ----
+# =============================
+
+selected_variables <- c("FlowsTOTR", "FlowsFROMTR", "ProdTURBINEROCK", "SeconProd", 
+                        "TurbineTotal", "TotalRESP", "TotalUpta", "UptaTURBINEROCK")
+
+extract_year_stats <- function(stats, year) {
+  df <- stats[selected_variables, ]
+  colnames(df) <- c("mean", "sd")
+  df$year <- year
+  df$variable <- selected_variables
+  df
+}
+
+combined_data <- bind_rows(
+  extract_year_stats(results_2009_stats, 2009),
+  extract_year_stats(results_2012_stats, 2012),
+  extract_year_stats(results_2016_stats, 2016),
+  extract_year_stats(results_2019_stats, 2019),
+  extract_year_stats(results_2022_stats, 2022)
+)
+
+combined_data$variable <- factor(combined_data$variable, levels = selected_variables)
+
+# Define patterns to exclude flows we don’t want in totals
+exclude_patterns <- c("->DIC", "->EXP", "->BUR", "DIC->PHY", "EXP->", "BUR->", "DIC->")
+
+# Filter out unwanted flows
+filtered_2009 <- results_2009[, !grepl(paste(exclude_patterns, collapse = "|"), colnames(results_2009))]
+filtered_2012 <- results_2012[, !grepl(paste(exclude_patterns, collapse = "|"), colnames(results_2012))]
+filtered_2016 <- results_2016[, !grepl(paste(exclude_patterns, collapse = "|"), colnames(results_2016))]
+filtered_2019 <- results_2019[, !grepl(paste(exclude_patterns, collapse = "|"), colnames(results_2019))]
+filtered_2022 <- results_2022[, !grepl(paste(exclude_patterns, collapse = "|"), colnames(results_2022))]
+
+# Calculate total internal flows
+total_flows_stats <- data.frame(
+  mean = c(mean(rowSums(filtered_2009)), mean(rowSums(filtered_2012)), mean(rowSums(filtered_2016)),
+           mean(rowSums(filtered_2019)), mean(rowSums(filtered_2022))),
+  sd = c(sd(rowSums(filtered_2009)), sd(rowSums(filtered_2012)), sd(rowSums(filtered_2016)),
+         sd(rowSums(filtered_2019)), sd(rowSums(filtered_2022))),
+  year = c(2009, 2012, 2016, 2019, 2022),
+  variable = "Total Flows"
+)
+
+# Extract turbine flows from combined_data (calculated in earlier section)
+flows_to_turbine <- combined_data %>% filter(variable == "TurbineTotal")
+
+# Calculate non-turbine internal flows
+non_turbine_flows_stats <- total_flows_stats
+non_turbine_flows_stats$mean <- total_flows_stats$mean - flows_to_turbine$mean
+non_turbine_flows_stats$variable <- "Non-Turbine Flows"
+
+# Combine for plotting
+combined_plot_data <- bind_rows(non_turbine_flows_stats, flows_to_turbine)
+
+# Set factor levels to control stacking
+combined_plot_data$variable <- factor(combined_plot_data$variable, levels = c("Non-Turbine Flows", "TurbineTotal"))
+
+# Calculate % contribution of turbine flows
+flows_to_turbine$percentage <- (flows_to_turbine$mean / total_flows_stats$mean) * 100
+combined_plot_data$label <- ifelse(combined_plot_data$variable == "TurbineTotal",
+                                   paste0(round(flows_to_turbine$percentage, 1), "%"),
+                                   "")
+
+# Format
+combined_plot_data$year <- factor(combined_plot_data$year)
+
+# Plot
+col_palette <- c("Non-Turbine Flows" = "#377EB8", "TurbineTotal" = "#FF7F00")
+
+turbine_variables_plot <- ggplot(combined_plot_data, aes(x = year, y = mean, fill = variable)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8)) +
+  geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd),
+                width = 0.2, position = position_dodge(width = 0.8), color = "black") +
+  geom_text(data = combined_plot_data %>% filter(variable == "TurbineTotal"),
+            aes(label = label, y = mean + sd + 8),
+            position = position_dodge(width = 0.8),
+            size = 4, fontface = "bold", hjust = -0.2) +
+  scale_fill_manual(values = col_palette,
+                    labels = c("TurbineTotal" = "Fouling fauna flows",
+                               "Non-Turbine Flows" = "Internal flows")) +
+  labs(title = expression("Internal flows and flows to turbine"),
+       x = "Year",
+       y = expression("Mean carbon flows (mmol C / m"^2*"/day)"),
+       fill = "Flow Type") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 14),
+        axis.text.y = element_text(size = 14),
+        legend.title = element_blank(),
+        plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+        axis.title.y = element_text(size = 14),
+        axis.title.x = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        legend.position = "bottom")
+
+
+# =============================
+# Prepare production plot ----
+# =============================
+
+prod_vars <- c("SeconProd", "ProdTURBINEROCK")
+
+extract_prod_stats <- function(stats, year) {
+  df <- stats[prod_vars, ]
+  colnames(df) <- c("mean", "sd")
+  df$year <- year
+  df$variable <- prod_vars
+  df
+}
+
+prod_data <- bind_rows(
+  extract_prod_stats(results_2009_stats, 2009),
+  extract_prod_stats(results_2012_stats, 2012),
+  extract_prod_stats(results_2016_stats, 2016),
+  extract_prod_stats(results_2019_stats, 2019),
+  extract_prod_stats(results_2022_stats, 2022)
+)
+
+# Rename variables
+prod_data$variable <- as.character(prod_data$variable)
+prod_data$variable[prod_data$variable == "SeconProd"] <- "Secondary Production"
+prod_data$variable[prod_data$variable == "ProdTURBINEROCK"] <- "Turbine production"
+prod_data$variable <- factor(prod_data$variable, levels = c("Turbine production", "Secondary Production"))
+
+# Calculate remaining secondary production
+turbo <- prod_data %>% filter(variable == "Turbine production")
+sec <- prod_data %>% filter(variable == "Secondary Production")
+
+remaining_sec <- sec
+remaining_sec$mean <- sec$mean - turbo$mean
+remaining_sec$sd <- sqrt(sec$sd^2 + turbo$sd^2)
+remaining_sec$variable <- "Remaining Secondary Production"
+
+# Combine and recode factor levels
+combined_prod <- bind_rows(turbo, remaining_sec)
+combined_prod$variable <- factor(combined_prod$variable,
+                                 levels = c("Remaining Secondary Production", "Turbine production"))
+
+# Calculate turbine % and labels
+combined_prod <- combined_prod %>%
+  group_by(year) %>%
+  mutate(total = sum(mean),
+         percentage = if_else(variable == "Turbine production", mean / total * 100, NA_real_),
+         label = if_else(!is.na(percentage), paste0(round(percentage, 1), "%"), "")
+  )
+
+# Production plot
+col_palette_prod <- c("Turbine production" = "#FF7F00", 
+                      "Remaining Secondary Production" = "#4DAF4A")
+
+production_plot <- ggplot(combined_prod, aes(x = factor(year), y = mean, fill = variable)) +
+  geom_bar(stat = "identity", position = position_dodge(0.8)) +
+  geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd),
+                width = 0.2, position = position_dodge(0.8)) +
+  geom_text(
+    data = combined_prod %>% filter(variable == "Turbine production"),
+    aes(label = label, y = mean + sd + 0.7),
+    position = position_dodge(0.8),
+    size = 4, fontface = "bold", hjust = -0.2
+  ) +
+  scale_fill_manual(values = col_palette_prod) +
+  labs(
+    title = "Secondary and Turbine Production",
+    x = "Year",
+    y = expression("Mean production (mmol C / m"^2*"/day)"),
+    fill = "Production Type"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_text(size = 12),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 11),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    legend.position = "bottom"
+  )
+
+production_plot
+
+turbine_variables_plot
+
+```
+
 
 ```{r}
 # Calculate indices for each year and type
@@ -273,7 +459,67 @@ PathInd12 <- calculate_indices(LIM.abril12, results_2012, "2012", "path")
 PathInd16 <- calculate_indices(LIM.abril16, results_2016, "2016", "path")
 PathInd19 <- calculate_indices(LIM.abril19, results_2019, "2019", "path")
 PathInd22 <- calculate_indices(LIM.abril22, results_2022, "2022", "path")
+
+save.image("Results_sample_LIM/Network_Indices.Rdata")
 ```
+
+#Quantitative indices plotting
+```{r}
+# Define color palette
+col_palette <- RColorBrewer::brewer.pal(9, "Set1")
+
+# Combine data for all years
+PathIndices_all <- bind_rows(PathInd09, PathInd12, PathInd16, PathInd19, PathInd22)
+GenIndices_all <- bind_rows(GenInd09, GenInd12, GenInd16, GenInd19, GenInd22)
+
+# Reshape data to long format and clean
+PathIndices_long <- PathIndices_all %>%
+  pivot_longer(cols = -c(Network, Iteration), names_to = "Index", values_to = "Value") %>%
+  mutate(Value = as.numeric(Value)) %>%
+  filter(!is.na(Value), Index == "FCIb")  # Only keep FCIb
+
+GenIndices_long <- GenIndices_all %>%
+  pivot_longer(cols = -c(Network, Iteration), names_to = "Index", values_to = "Value") %>%
+  mutate(Value = as.numeric(Value)) %>%
+  filter(!is.na(Value), Index == "T..")  # Only keep T..
+
+# Plot: General Indices with Confidence Interval (Boxplot)
+GenPlot_with_CI <- ggplot(GenIndices_long, aes(x = Network, y = Value, fill = Network)) +
+  geom_boxplot(outlier.size = 2, outlier.colour = "red", alpha = 0.7) +
+  labs(title = "Total system throughput (T..)",
+       x = "Year",
+       y = expression("T.. (mmol C / m"^2*"/day)"),
+       fill = "Year") +
+  scale_fill_manual(values = col_palette) +
+  theme_bw() +
+  theme(axis.text.x = element_text(hjust = 1),
+        strip.text = element_text(size = 10),
+        panel.background = element_blank(),
+        plot.background = element_blank())
+
+# Plot: Pathway Indices with Confidence Interval (Boxplot)
+PathPlot_with_CI <- ggplot(PathIndices_long, aes(x = Network, y = Value, fill = Network)) +
+  geom_boxplot(outlier.size = 2, outlier.colour = "red", alpha = 0.7) +
+  labs(title = "Finn Cycling Index (FCIb)",
+       x = "Year",
+       y = "Value",
+       fill = "Year") +
+  scale_fill_manual(values = col_palette) +
+  theme_bw() +
+  theme(axis.text.x = element_text(hjust = 1),
+        strip.text = element_text(size = 10),
+        panel.background = element_blank(),
+        plot.background = element_blank())
+
+# Display plots
+GenPlot_with_CI
+PathPlot_with_CI
+
+```
+
+
+
+
 #Interaction strenght
 ```{r, warning = F}
 

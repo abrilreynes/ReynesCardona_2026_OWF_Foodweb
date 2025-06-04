@@ -639,6 +639,7 @@ attributes2009 <- attributes2009 %>%
 modulos_2009 <- cluster_spinglass(net_2009)
 mod_2009 <- data.frame(Name="2009", Groups=length(modulos_2009$csize), Modularity=modulos_2009$modularity)
 
+
 nc <- detectCores()
 tR_2009 <- calc_topological_roles(net_2009, nsim=1000, ncores=nc)
 tR_2009$node = as.character(tR_2009$node)
@@ -651,7 +652,7 @@ topoRoles_2009 <- tR_2009_names %>% mutate(Network = "2009")
 hc_2009 <- plot_topological_roles(topoRoles_2009, net_2009, modulos_2009)
 hc_2009 <- merge(topoRoles_2009, hc_2009 , by = "name", all.x = TRUE)
 
-hc_2009 <- hc_2009 %>% mutate(modulo = modulos_2009$membership[name], Name = "2009")
+hc_2009 <- hc_2009 %>% mutate(modulo = modulos_2009$membership, Name = "2009")
 
 hard_substrate_Speciess_2009 <- attributes2009 %>%
   filter(groups == "Hard-substrate") %>%
@@ -693,7 +694,7 @@ topoRoles_2012 <- tR_2012_names %>% mutate(Network = "2012")
 hc_2012 <- plot_topological_roles(topoRoles_2012, net_2012, modulos_2012)
 hc_2012 <- merge(topoRoles_2012, hc_2012 , by = "name", all.x = TRUE)
 
-hc_2012 <- hc_2012 %>% mutate(modulo = modulos_2012$membership[name], Name = "2012")
+hc_2012 <- hc_2012 %>% mutate(modulo = modulos_2012$membership, Name = "2012")
 
 hard_substrate_Speciess_2012 <- attributes2012 %>%
   filter(groups == "Hard-substrate") %>%
@@ -735,7 +736,7 @@ topoRoles_2016 <- tR_2016_names %>% mutate(Network = "2016")
 hc_2016 <- plot_topological_roles(topoRoles_2016, net_2016, modulos_2016)
 hc_2016 <- merge(topoRoles_2016, hc_2016 , by = "name", all.x = TRUE)
 
-hc_2016 <- hc_2016 %>% mutate(modulo = modulos_2016$membership[name], Name = "2016")
+hc_2016 <- hc_2016 %>% mutate(modulo = modulos_2016$membership, Name = "2016")
 
 hard_substrate_Speciess_2016 <- attributes2016 %>%
   filter(groups == "Hard-substrate") %>%
@@ -777,7 +778,7 @@ topoRoles_2019 <- tR_2019_names %>% mutate(Network = "2019")
 hc_2019 <- plot_topological_roles(topoRoles_2019, net_2019, modulos_2019)
 hc_2019 <- merge(topoRoles_2019, hc_2019 , by = "name", all.x = TRUE)
 
-hc_2019 <- hc_2019 %>% mutate(modulo = modulos_2019$membership[name], Name = "2019")
+hc_2019 <- hc_2019 %>% mutate(modulo = modulos_2019$membership, Name = "2019")
 
 hard_substrate_Speciess_2019 <- attributes2019 %>%
   filter(groups == "Hard-substrate") %>%
@@ -820,7 +821,7 @@ topoRoles_2022 <- tR_2022_names %>% mutate(Network = "2022")
 hc_2022 <- plot_topological_roles(topoRoles_2022, net_2022, modulos_2022)
 hc_2022 <- merge(topoRoles_2022, hc_2022 , by = "name", all.x = TRUE)
 
-hc_2022 <- hc_2022 %>% mutate(modulo = modulos_2022$membership[name], Name = "2022")
+hc_2022 <- hc_2022 %>% mutate(modulo = modulos_2022$membership, Name = "2022")
 
 hard_substrate_Speciess_2022 <- attributes2022 %>%
   filter(groups == "Hard-substrate") %>%
@@ -859,4 +860,93 @@ print(merged_summary_HS)
 
 ```
 
+```{r}
+
+hub_conn = rbind(hc_2009 , hc_2012, hc_2016, hc_2019, hc_2022)
+
+#write.csv(hub_conn, "~/phD/WP1_TemporalFW/METAWEB/Metaweb_R/topol_roles.csv")
+
+hub_conn = ggplot(hub_conn, aes(x = factor(modulo), fill = groups)) +
+  geom_bar(position = "stack") +
+  facet_wrap(~ Network) +  # Create a separate graph for each year
+  labs(title = "Module Types and Species Groups Across Years",
+       x = "Module",
+       y = "Count of Species",
+       fill = "Species Type") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("~/phD/WP1_TemporalFW/manuscript/module_distribution.png", hub_conn)
+
+```
+#Plot species topol roles
+```{r}
+
+library(gridExtra)
+
+hc_2009 = filter(hc_2009, Grouping == "Hard-substrate", 
+                 among_module_conn >= 0.1)
+
+plot_2009 <- ggplot(hc_2009, aes(x = among_module_conn, y = within_module_degree, label = name)) +
+  geom_point(size = 3) + 
+  geom_text(vjust = -0.5, hjust = 0.5, size = 3) +  
+  geom_vline(xintercept = 0.625, color = "grey1", linetype = "dashed") +  
+  geom_hline(yintercept = 2.5, color = "grey1", linetype = "dashed") +    
+  labs(x = "Among Module Connectivity", y = "Within Module Degree", title = "Node Topology Plot 2009") +
+  theme_minimal()
+
+# 2012
+hc_2012 = filter(hc_2012, Grouping == "Hard-substrate", 
+                 among_module_conn >= 0.1)
+
+plot_2012 <- ggplot(hc_2012, aes(x = among_module_conn, y = within_module_degree, label = name)) +
+  geom_point(size = 3) + 
+  geom_text(vjust = -0.5, hjust = 0.5, size = 3) +  
+  geom_vline(xintercept = 0.625, color = "grey1", linetype = "dashed") +  
+  geom_hline(yintercept = 2.5, color = "grey1", linetype = "dashed") +    
+  labs(x = "Among Module Connectivity", y = "Within Module Degree", title = "Node Topology Plot 2012") +
+  theme_minimal()
+
+# 2016
+hc_2016 = filter(hc_2016, Grouping == "Hard-substrate", 
+                 among_module_conn >= 0.1)
+
+plot_2016 <- ggplot(hc_2016, aes(x = among_module_conn, y = within_module_degree, label = name)) +
+  geom_point(size = 3) + 
+  geom_text(vjust = -0.5, hjust = 0.5, size = 3) +  
+  geom_vline(xintercept = 0.625, color = "grey1", linetype = "dashed") +  
+  geom_hline(yintercept = 2.5, color = "grey1", linetype = "dashed") +    
+  labs(x = "Among Module Connectivity", y = "Within Module Degree", title = "Node Topology Plot 2016") +
+  theme_minimal()
+
+# 2019
+hc_2019 = filter(hc_2019, Grouping == "Hard-substrate", 
+                 among_module_conn >= 0.1)
+
+plot_2019 <- ggplot(hc_2019, aes(x = among_module_conn, y = within_module_degree, label = name)) +
+  geom_point(size = 3) + 
+  geom_text(vjust = -0.5, hjust = 0.5, size = 3) +  
+  geom_vline(xintercept = 0.625, color = "grey1", linetype = "dashed") +  
+  geom_hline(yintercept = 2.5, color = "grey1", linetype = "dashed") +    
+  labs(x = "Among Module Connectivity", y = "Within Module Degree", title = "Node Topology Plot 2019") +
+  theme_minimal()
+
+# 2022
+hc_2022 = filter(hc_2022, Grouping == "Hard-substrate", 
+                 among_module_conn >= 0.1)
+
+plot_2022 <- ggplot(hc_2022, aes(x = among_module_conn, y = within_module_degree, label = name)) +
+  geom_point(size = 3) + 
+  geom_text(vjust = -0.5, hjust = 0.5, size = 3) +  
+  geom_vline(xintercept = 0.625, color = "grey1", linetype = "dashed") +  
+  geom_hline(yintercept = 2.5, color = "grey1", linetype = "dashed") +    
+  labs(x = "Among Module Connectivity", y = "Within Module Degree", title = "Node Topology Plot 2022") +
+  theme_minimal()
+
+# Arrange in 2 columns x 3 rows
+topo_roles = grid.arrange(plot_2009, plot_2012, plot_2016, plot_2019, plot_2022, ncol = 2, nrow = 3)
+
+ggsave("~/phD/WP1_TemporalFW/manuscript/species_topol_roles.png", topo_roles, dpi = 300, width = 10, height = 7)
+
+```
 
