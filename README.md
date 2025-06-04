@@ -1,8 +1,8 @@
 ## 📘 Manuscript title XXX
 
-  <img src="Icon.png" alt="OWF Icon" width="120" style="vertical-align:middle; margin-right:15px;"/>
+  <img src="Icon.png" alt="OWF Icon" width="120" style="vertical-align:middle; margin-right:15px;"/> 
 
-This repository contains the full codebase and data used in the analyses presented in the manuscript **"XXXXX"** (replace with your actual title). It includes RMarkdown scripts, input files, and helper functions used to reproduce all results presented in the paper.
+This repository contains the code and data used in the analyses presented in the manuscript **"XXXXX"**. It includes RMarkdown scripts, input files, and functions used to reproduce all results presented in the paper.
 
 The associated article can be found [here](https://doi.org/xxxxx) (replace with the actual DOI or journal link).
 
@@ -23,9 +23,9 @@ The associated article can be found [here](https://doi.org/xxxxx) (replace with 
 | `LICENSE`                  | License for use                                                                     |
 | `README.md`                | This file                                                                           |
 
-Please read the Materials and Methods section of the article and references therein to understand the model parameters and process descriptions.
+Please read the Materials and Methods section of the article and references therein to understand the models.
 
 ---
 
-#### Please contact the authors (Abril Reynés Cardona - abril.reynescardona@ugent.be) for issues, remarks, suggestions or to inquire about collaborations.
+#### Please contact the authors (Abril Reynés Cardona - abril.reynescardona@ugent.be) for any issue or remark.
 
