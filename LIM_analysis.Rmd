@@ -327,6 +327,7 @@ combined_plot_data$label <- ifelse(combined_plot_data$variable == "TurbineTotal"
 
 # Format
 combined_plot_data$year <- factor(combined_plot_data$year)
+combined_plot_data$variable <- factor(combined_plot_data$variable, levels = c("Non-Turbine Flows","TurbineTotal"))
 
 # Plot
 col_palette <- c("Non-Turbine Flows" = "#377EB8", "TurbineTotal" = "#FF7F00")
@@ -340,9 +341,9 @@ turbine_variables_plot <- ggplot(combined_plot_data, aes(x = year, y = mean, fil
             position = position_dodge(width = 0.8),
             size = 4, fontface = "bold", hjust = -0.2) +
   scale_fill_manual(values = col_palette,
-                    labels = c("TurbineTotal" = "Fouling fauna flows",
+                    labels = c("TurbineTotal" = "Hard-substrate fauna flows",
                                "Non-Turbine Flows" = "Internal flows")) +
-  labs(title = expression("Internal flows and flows to turbine"),
+  labs(title = expression("Internal flows and flows to hard-substrate community"),
        x = "Year",
        y = expression("Mean carbon flows (mmol C / m"^2*"/day)"),
        fill = "Flow Type") +
@@ -353,7 +354,7 @@ turbine_variables_plot <- ggplot(combined_plot_data, aes(x = year, y = mean, fil
         plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
         axis.title.y = element_text(size = 14),
         axis.title.x = element_text(size = 14),
-        legend.text = element_text(size = 12),
+        legend.text = element_text(size = 14),
         legend.position = "bottom")
 
 
@@ -382,11 +383,11 @@ prod_data <- bind_rows(
 # Rename variables
 prod_data$variable <- as.character(prod_data$variable)
 prod_data$variable[prod_data$variable == "SeconProd"] <- "Secondary Production"
-prod_data$variable[prod_data$variable == "ProdTURBINEROCK"] <- "Turbine production"
-prod_data$variable <- factor(prod_data$variable, levels = c("Turbine production", "Secondary Production"))
+prod_data$variable[prod_data$variable == "ProdTURBINEROCK"] <- "Hard-substrate fauna production"
+prod_data$variable <- factor(prod_data$variable, levels = c("Hard-substrate fauna production", "Secondary Production"))
 
 # Calculate remaining secondary production
-turbo <- prod_data %>% filter(variable == "Turbine production")
+turbo <- prod_data %>% filter(variable == "Hard-substrate fauna production")
 sec <- prod_data %>% filter(variable == "Secondary Production")
 
 remaining_sec <- sec
@@ -396,34 +397,39 @@ remaining_sec$variable <- "Remaining Secondary Production"
 
 # Combine and recode factor levels
 combined_prod <- bind_rows(turbo, remaining_sec)
-combined_prod$variable <- factor(combined_prod$variable,
-                                 levels = c("Remaining Secondary Production", "Turbine production"))
+#combined_prod$variable <- factor(combined_prod$variable,
+ #                                levels = c("Remaining Secondary Production", "Hard-substrate production"))
 
 # Calculate turbine % and labels
 combined_prod <- combined_prod %>%
   group_by(year) %>%
   mutate(total = sum(mean),
-         percentage = if_else(variable == "Turbine production", mean / total * 100, NA_real_),
+         percentage = if_else(variable == "Hard-substrate fauna production", mean / total * 100, NA_real_),
          label = if_else(!is.na(percentage), paste0(round(percentage, 1), "%"), "")
   )
 
+combined_prod$variable <- factor(combined_prod$variable,
+                                 levels = c("Remaining Secondary Production", "Hard-substrate fauna production"))
+
+
 # Production plot
-col_palette_prod <- c("Turbine production" = "#FF7F00", 
-                      "Remaining Secondary Production" = "#4DAF4A")
+col_palette_prod <- c(                      "Remaining Secondary Production" = "#4DAF4A",
+                                            "Hard-substrate fauna production" = "#FF7F00" 
+)
 
 production_plot <- ggplot(combined_prod, aes(x = factor(year), y = mean, fill = variable)) +
   geom_bar(stat = "identity", position = position_dodge(0.8)) +
   geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd),
                 width = 0.2, position = position_dodge(0.8)) +
   geom_text(
-    data = combined_prod %>% filter(variable == "Turbine production"),
+    data = combined_prod %>% filter(variable == "Hard-substrate fauna production"),
     aes(label = label, y = mean + sd + 0.7),
     position = position_dodge(0.8),
     size = 4, fontface = "bold", hjust = -0.2
   ) +
   scale_fill_manual(values = col_palette_prod) +
   labs(
-    title = "Secondary and Turbine Production",
+    title = "Secondary and hard-substrate fauna production",
     x = "Year",
     y = expression("Mean production (mmol C / m"^2*"/day)"),
     fill = "Production Type"
@@ -433,8 +439,8 @@ production_plot <- ggplot(combined_prod, aes(x = factor(year), y = mean, fill = 
     axis.text.x = element_text(size = 12),
     axis.text.y = element_text(size = 12),
     legend.title = element_blank(),
-    legend.text = element_text(size = 11),
-    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    legend.text = element_text(size = 14),
+    plot.title = element_text(hjust = 0.5, size = 14),
     legend.position = "bottom"
   )
 
@@ -445,7 +451,7 @@ turbine_variables_plot
 ```
 
 
-```{r}
+```{r, eval = F}
 # Calculate indices for each year and type
 GenInd09 <- calculate_indices(LIM.abril09, results_2009, "2009", "gen")
 GenInd12 <- calculate_indices(LIM.abril12, results_2012, "2012", "gen")
@@ -459,8 +465,10 @@ PathInd12 <- calculate_indices(LIM.abril12, results_2012, "2012", "path")
 PathInd16 <- calculate_indices(LIM.abril16, results_2016, "2016", "path")
 PathInd19 <- calculate_indices(LIM.abril19, results_2019, "2019", "path")
 PathInd22 <- calculate_indices(LIM.abril22, results_2022, "2022", "path")
+```
 
-save.image("Results_sample_LIM/Network_Indices.Rdata")
+```{r}
+load("Results_sample_LIM/Network_Indices.Rdata")
 ```
 
 #Quantitative indices plotting
@@ -592,8 +600,8 @@ mean_values <- link_weights_all %>%
 # Boxplot de la varianza de los pesos de enlace con anotaciones de media
 variance_IS <- ggplot(link_weights_all, aes(x = Network, y = Variance_Link_Weight, fill = Network)) +
   geom_boxplot(outlier.size = 2, outlier.colour = "red", alpha = 0.7) +
-  geom_text(data = mean_values, aes(label = round(Mean_Link_Weight, 3), y = max(link_weights_all$Variance_Link_Weight) *0.9),
-            position = position_dodge(width = 0.95), size = 5, vjust = -0.2) +
+#  geom_text(data = mean_values, aes(label = round(Mean_Link_Weight, 3), y = max(link_weights_all$Variance_Link_Weight) *0.9),
+    #        position = position_dodge(width = 0.95), size = 5, vjust = -0.2) +
   labs(title = "Interaction strength (IS)",
        x = "Year",
        y = expression("IS (mmol C / m"^2*"/day)"),
@@ -606,6 +614,50 @@ variance_IS <- ggplot(link_weights_all, aes(x = Network, y = Variance_Link_Weigh
         plot.background = element_blank())
 
 ```
+
+
+# Summary statistics
+```{r}
+# Compute statistics for T..
+T_summary <- GenIndices_long %>%
+  group_by(Network) %>%
+  summarize(
+    Q1 = quantile(Value, 0.25, na.rm = TRUE),
+    Median = median(Value, na.rm = TRUE),
+    Q3 = quantile(Value, 0.75, na.rm = TRUE),
+    IQR = Q3 - Q1,
+    Variance = var(Value, na.rm = TRUE)
+  )
+
+# Compute statistics for FCIb
+FCIb_summary <- PathIndices_long %>%
+  group_by(Network) %>%
+  summarize(
+    Q1 = quantile(Value, 0.25, na.rm = TRUE),
+    Median = median(Value, na.rm = TRUE),
+    Q3 = quantile(Value, 0.75, na.rm = TRUE),
+    IQR = Q3 - Q1,
+    Variance = var(Value, na.rm = TRUE)
+  )
+
+IS_summary <- link_weights_all %>%
+  group_by(Network) %>%
+  summarize(
+    Q1 = quantile(Variance_Link_Weight, 0.25, na.rm = TRUE),
+    Median = median(Variance_Link_Weight, na.rm = TRUE),
+    Q3 = quantile(Variance_Link_Weight, 0.75, na.rm = TRUE),
+    IQR = Q3 - Q1,
+    Variance = var(Variance_Link_Weight, na.rm = TRUE)
+  )
+
+# Print summaries
+print(T_summary)
+print(FCIb_summary)
+print(IS_summary)
+```
+
+
+
 
 #Statistical comparison of years
 ```{r}
@@ -674,6 +726,67 @@ pairwise_wilcox <- pairwise.wilcox.test(link_weights_all$Variance_Link_Weight, l
 print(pairwise_wilcox)
 
 ```
+
+
+#Manuscript plotting
+```{r}
+GenPlot_with_CI <- GenPlot_with_CI + 
+  theme(axis.text.x = element_text(size = 14),
+        axis.text.y = element_text(size = 14),  # Added this line
+        plot.title = element_text(face = "plain", hjust = 0.5, size = 15),
+        legend.position = "none",
+        axis.title.y = element_text(size = 14),
+        axis.title.x = element_text(size = 14),
+        panel.background = element_blank(),  # Corrected typo
+        plot.background = element_blank()) +  # Corrected typo
+  labs(y = expression("T.. (mmol C / m"^2*"/day)")) +
+  annotate("text", x = -Inf, y = Inf, label = "A", hjust = -0.5, vjust = 1.5, size = 6, fontface = "bold")
+
+variance_IS <- variance_IS + 
+  theme(axis.text.x = element_text(size = 14),
+        axis.text.y = element_text(size = 14),  # Added this line
+        plot.title = element_text(face = "plain", hjust = 0.5, size = 15),
+        legend.position = "none",
+        axis.title.y = element_text(size = 14),
+        axis.title.x = element_text(size = 14),
+        panel.background = element_blank(),  # Corrected typo
+        plot.background = element_blank()) +  # Corrected typo
+  labs(y = expression("IS (mmol C / m"^2*"/day)")) +
+  annotate("text", x = -Inf, y = Inf, label = "C", hjust = -0.5, vjust = 1.5, size = 6, fontface = "bold")
+
+PathPlot_with_CI <- PathPlot_with_CI + 
+  theme(axis.text.x = element_text(size = 14),
+        axis.text.y = element_text(size = 14),  # Added this line
+        plot.title = element_text(face = "plain", hjust = 0.5, size = 15),
+        legend.position = "none",
+        axis.title.y = element_text(size = 14),
+        axis.title.x = element_text(size = 14),
+        panel.background = element_blank(),  # Corrected typo
+        plot.background = element_blank()) +  # Corrected typo
+  labs(y = expression("FCIb (mmol C / m"^2*"/day)")) +
+  annotate("text", x = -Inf, y = Inf, label = "B", hjust = -0.5, vjust = 1.5, size = 6, fontface = "bold")
+
+production_plot <- production_plot +
+  annotate("text", x = -Inf, y = Inf, label = "D", hjust = -0.5, vjust = 1.5, size = 6, fontface = "bold")
+
+turbine_variables_plot <- turbine_variables_plot +
+  annotate("text", x = -Inf, y = Inf, label = "E", hjust = -0.5, vjust = 1.5, size = 6, fontface = "bold")
+
+# Arrange the plots
+first_plot <- (GenPlot_with_CI | PathPlot_with_CI | variance_IS) + 
+  plot_layout(ncol = 3, heights = c(1))
+
+second_plot <- (production_plot + turbine_variables_plot) + 
+  plot_layout(ncol = 2, heights = c(1))
+
+final_plot <- first_plot / second_plot + 
+  plot_layout(ncol = 1, heights = c(1, 1))
+
+# Save the final plot
+ggsave("~/phD/WP1_TemporalFW/manuscript/Figures/ENA_indices.jpg", plot = final_plot, dpi = 300, width = 15, height = 10)
+```
+
+
 
 #Carbon stocks
 
