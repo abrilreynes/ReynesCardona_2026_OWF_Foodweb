@@ -338,7 +338,7 @@ all_flow_stats <- dplyr::bind_rows(
 )
 
 # Write to CSV
-write.csv(all_flow_stats, "~/phD/WP1_TemporalFW/LIM/flows_LIM.csv", row.names = FALSE)
+#write.csv(all_flow_stats, "~/phD/WP1_TemporalFW/LIM/flows_LIM.csv", row.names = FALSE)
 
 
 
@@ -482,7 +482,7 @@ sec <- prod_data %>% filter(variable == "Secondary Production")
 remaining_sec <- sec
 remaining_sec$mean <- sec$mean - turbo$mean
 remaining_sec$sd <- sqrt(sec$sd^2 + turbo$sd^2)
-remaining_sec$variable <- "Remaining Secondary Production"
+remaining_sec$variable <- "Remaining secondary production"
 
 # Combine and recode factor levels
 combined_prod <- bind_rows(turbo, remaining_sec)
@@ -498,11 +498,11 @@ combined_prod <- combined_prod %>%
   )
 
 combined_prod$variable <- factor(combined_prod$variable,
-                                 levels = c("Remaining Secondary Production", "Hard-substrate fauna production"))
+                                 levels = c("Remaining secondary production", "Hard-substrate fauna production"))
 
 
 # Production plot
-col_palette_prod <- c(                      "Remaining Secondary Production" = "#4DAF4A",
+col_palette_prod <- c(                      "Remaining secondary production" = "#4DAF4A",
                                             "Hard-substrate fauna production" = "#FF7F00" 
 )
 
@@ -524,14 +524,15 @@ production_plot <- ggplot(combined_prod, aes(x = factor(year), y = mean, fill = 
     fill = "Production Type"
   ) +
   theme_minimal() +
-  theme(
-    axis.text.x = element_text(size = 12),
-    axis.text.y = element_text(size = 12),
-    legend.title = element_blank(),
-    legend.text = element_text(size = 14),
-    plot.title = element_text(hjust = 0.5, size = 14),
-    legend.position = "bottom"
-  )
+  theme(axis.text.x = element_text(size = 14),
+        axis.text.y = element_text(size = 14),
+        legend.title = element_blank(),
+        plot.title = element_text(hjust = 0.5, size = 14),
+        axis.title.y = element_text(size = 14),
+        axis.title.x = element_text(size = 14),
+        legend.text = element_text(size = 14),
+        legend.position = "bottom")
+
 
 production_plot
 
@@ -938,7 +939,7 @@ final_plot <- first_plot / second_plot +
   plot_layout(ncol = 1, heights = c(1, 1))
 
 # Save the final plot
-ggsave("~/phD/WP1_TemporalFW/manuscript/Figures/ENA_indices.jpg", plot = final_plot, dpi = 300, width = 13, height = 9)
+ggsave("~/phD/WP1_TemporalFW/manuscript/Figures/ENA_indices.tif", plot = final_plot, dpi = 300, width = 13, height = 9)
 ```
 
 
