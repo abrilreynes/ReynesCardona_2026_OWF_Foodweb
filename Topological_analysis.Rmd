@@ -491,20 +491,20 @@ p <- ggplot(filtered_data, aes(x = Network, y = .data[[variable]], color = Netwo
     )
 
 
-  if (length(significant_pairs) > 0) {
-    y_pos <- max(filtered_data[[variable]], na.rm = TRUE) + 0.1 * IQR(filtered_data[[variable]], na.rm = TRUE)
+#  if (length(significant_pairs) > 0) {
+#    y_pos <- max(filtered_data[[variable]], na.rm = TRUE) + 0.1 * IQR(filtered_data[[variable]], na.rm = TRUE)
 
-    p <- p + geom_signif(
-      comparisons = lapply(seq_len(nrow(significant_pairs)), function(i) {
-        c(rownames(sig_pairs)[significant_pairs[i, 1]],
-          colnames(sig_pairs)[significant_pairs[i, 2]])
-      }),
-      map_signif_level = TRUE,
-      textsize = 4,
-      color = "black",
-      y_position = y_pos
-    )
-  }
+   # p <- p + geom_signif(
+    #  comparisons = lapply(seq_len(nrow(significant_pairs)), function(i) {
+     #   c(rownames(sig_pairs)[significant_pairs[i, 1]],
+      #    colnames(sig_pairs)[significant_pairs[i, 2]])
+      #}),
+      #map_signif_level = TRUE,
+      #textsize = 4,
+      #color = "black",
+      #y_position = y_pos
+   # )
+  #}
 
   return(p)
 }
@@ -562,8 +562,8 @@ p <- ggplot(data_filtered, aes(x = Year, y = Value, color = Year, group = 1)) +
 
 # Filter pf
 pf <- filter(pf, LOmnivory < 1.5)
-result_TLmean <- create_plot_with_significance(pf, "TLmean", "Mean trophic level (TL)", websTbl)
-result_LOmnivory <- create_plot_with_significance(pf, "LOmnivory", "Mean level of omnivory (LOmn)", websTbl)
+result_TLmean <- create_plot_with_significance(pf, "TLmean", "Trophic level (TL)", websTbl)
+result_LOmnivory <- create_plot_with_significance(pf, "LOmnivory", "Omnivory (LOmn)", websTbl)
 result_mod <- create_plot_with_significance(pf, "modularity", "Modularity (Mod)", websTbl)
 
 # Create the final plot
@@ -586,6 +586,8 @@ final_plot <- final_plot + plot_annotation(
 
 # Print the final plot
 print(final_plot)
+
+ggsave("~/phD/WP1_TemporalFW/manuscript/Figures/Topol_indices.jpg", plot = final_plot, dpi = 300, width = 9, height = 10)
 
 ```
 
@@ -874,8 +876,19 @@ hub_conn = ggplot(hub_conn, aes(x = factor(modulo), fill = groups)) +
        y = "Count of Species",
        fill = "Species Type") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+scale_fill_manual(values = c(
+  "#E69F00", # orange
+  "#56B4E9", # sky blue
+  "#009E73", # bluish green
+  "#F0E442", # yellow
+  "#0072B2", # blue
+  "#D55E00", # vermillion
+  "#CC79A7", # reddish purple
+  "#999999", # gray
+  "#A6761D", # brown
+  "#66A61E"  # olive green
+))
 ggsave("~/phD/WP1_TemporalFW/manuscript/module_distribution.png", hub_conn)
 
 ```

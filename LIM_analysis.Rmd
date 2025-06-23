@@ -162,8 +162,11 @@ mean_sd_2009 <- t(apply(Var_2009, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, 
 results_2009_stats <- data.frame(
   mean = round(mean_sd_2009[, 1], 4),
   sd = round(mean_sd_2009[, 2], 4),
-  row.names = rownames(Var_2009)
+  row.names = rownames(Var_2009),
+    food_web = "2009"
 )
+
+
 
 # Rename columns
 colnames(results_2009_stats) <- c("mean_2009", "sd_2009")
@@ -184,7 +187,8 @@ mean_sd_2012 <- t(apply(Var_2012, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, 
 results_2012_stats <- data.frame(
   mean = round(mean_sd_2012[, 1], 4),
   sd = round(mean_sd_2012[, 2], 4),
-  row.names = rownames(Var_2012)
+  row.names = rownames(Var_2012),
+ food_web = "2012"
 )
 
 # Rename columns
@@ -206,7 +210,8 @@ mean_sd_2016 <- t(apply(Var_2016, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, 
 results_2016_stats <- data.frame(
   mean = round(mean_sd_2016[, 1], 5),
   sd = round(mean_sd_2016[, 2], 5),
-  row.names = rownames(Var_2016)
+  row.names = rownames(Var_2016),
+ food_web = "2016"
 )
 
 # Rename columns
@@ -229,7 +234,8 @@ mean_sd_2019 <- t(apply(Var_2019, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, 
 results_2019_stats <- data.frame(
   mean = round(mean_sd_2019[, 1], 4),
   sd = round(mean_sd_2019[, 2], 4),
-  row.names = rownames(Var_2019)
+  row.names = rownames(Var_2019),
+ food_web = "2019"
 )
 
  # 2022
@@ -250,13 +256,96 @@ mean_sd_2022 <- t(apply(Var_2022, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, 
 results_2022_stats <- data.frame(
   mean = round(mean_sd_2022[, 1], 4),
   sd = round(mean_sd_2022[, 2], 4),
-  row.names = rownames(Var_2022)
+  row.names = rownames(Var_2022),
+ food_web = "2022"
 )
 
 # Rename columns
-colnames(results_2022_stats) <- c("mean_2022", "sd_2022") 
+colnames(results_2022_stats) <- c("mean_2022", "sd_2022")
+
+all_food_web_stats <- bind_rows(
+  results_2009_stats,
+  results_2012_stats,
+  results_2016_stats,
+  results_2019_stats,
+  results_2022_stats
+)
+
+#write.csv(all_food_web_stats, "~/phD/WP1_TemporalFW/LIM/variables_LIM.csv")
 
 ```
+
+#Download food web flows
+```{r}
+
+# 2009
+mean_2009 <- colMeans(results_2009, na.rm = TRUE)
+sd_2009   <- apply(results_2009, 2, sd, na.rm = TRUE)
+stats_2009 <- data.frame(
+  Flow = names(mean_2009),
+  mean = mean_2009,
+  sd = sd_2009,
+  food_web_year = "2009"
+)
+
+# 2012
+mean_2012 <- colMeans(results_2012, na.rm = TRUE)
+sd_2012   <- apply(results_2012, 2, sd, na.rm = TRUE)
+stats_2012 <- data.frame(
+  Flow = names(mean_2012),
+  mean = mean_2012,
+  sd = sd_2012,
+  food_web_year = "2012"
+)
+
+# 2016
+mean_2016 <- colMeans(results_2016, na.rm = TRUE)
+sd_2016   <- apply(results_2016, 2, sd, na.rm = TRUE)
+stats_2016 <- data.frame(
+  Flow = names(mean_2016),
+  mean = mean_2016,
+  sd = sd_2016,
+  food_web_year = "2016"
+)
+
+# 2019
+mean_2019 <- colMeans(results_2019, na.rm = TRUE)
+sd_2019   <- apply(results_2019, 2, sd, na.rm = TRUE)
+stats_2019 <- data.frame(
+  Flow = names(mean_2019),
+  mean = mean_2019,
+  sd = sd_2019,
+  food_web_year = "2019"
+)
+
+# 2022
+mean_2022 <- colMeans(results_2022, na.rm = TRUE)
+sd_2022   <- apply(results_2022, 2, sd, na.rm = TRUE)
+stats_2022 <- data.frame(
+  Flow = names(mean_2022),
+  mean = mean_2022,
+  sd = sd_2022,
+  food_web_year = "2022"
+)
+
+# Combine all years
+all_flow_stats <- dplyr::bind_rows(
+  stats_2009,
+  stats_2012,
+  stats_2016,
+  stats_2019,
+  stats_2022
+)
+
+# Write to CSV
+write.csv(all_flow_stats, "~/phD/WP1_TemporalFW/LIM/flows_LIM.csv", row.names = FALSE)
+
+
+
+```
+
+
+
 
 #Production and flows plot
 ```{r}
@@ -449,6 +538,70 @@ production_plot
 turbine_variables_plot
 
 ```
+#General second production plots
+```{r}
+
+selected_variables <- c("ProdFISH", "ProdSED", "ProdTURBINEROCK", "ProdUBIQUOUS")
+
+extract_year_stats <- function(stats, year) {
+  df <- stats[selected_variables, ]
+  colnames(df) <- c("mean", "sd")
+  df$year <- year
+  df$variable <- rownames(df)
+  df
+}
+
+
+combined_data <- bind_rows(
+  extract_year_stats(results_2009_stats, 2009),
+  extract_year_stats(results_2012_stats, 2012),
+  extract_year_stats(results_2016_stats, 2016),
+  extract_year_stats(results_2019_stats, 2019),
+  extract_year_stats(results_2022_stats, 2022)
+)
+
+combined_data$year <- factor(combined_data$year)
+
+plot_production_variable <- function(data, var_name, fill_color = "#377EB8") {
+  # Define descriptive titles for each variable
+  title_map <- c(
+    "ProdFISH"      = "Secondary Production Fish",
+    "ProdSED"       = "Secondary Production Sediment",
+    "ProdTURBINEROCK"   = "Secondary Production Hard-substrate",
+    "ProdUBIQUOUS"  = "Secondary Production Ubiquitous"
+  )
+
+  # Extract correct data and title
+  plot_data <- data %>% filter(variable == var_name)
+  plot_title <- title_map[[var_name]]
+
+  ggplot(plot_data, aes(x = year, y = mean)) +
+    geom_col(fill = fill_color, width = 0.7) +
+    geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd),
+                  width = 0.2, color = "black") +
+    labs(title = plot_title,
+         x = "Year",
+         y = expression("Production (mmol C " * m^{-2} * " day"^{-1} * ")")) +
+    theme_minimal(base_size = 14) +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+}
+
+plot_prodFISH     <- plot_production_variable(combined_data, "ProdFISH")
+plot_prodSED      <- plot_production_variable(combined_data, "ProdSED")
+plot_prodTURBINE  <- plot_production_variable(combined_data, "ProdTURBINEROCK")
+plot_prodUBIQUOUS <- plot_production_variable(combined_data, "ProdUBIQUOUS")
+
+
+Production = plot_prodFISH + plot_prodSED + plot_prodTURBINE + plot_prodUBIQUOUS +
+  plot_layout(ncol = 2)
+
+ggsave("~/phD/WP1_TemporalFW/manuscript/Figures/Production_suppl.png", Production, height = 12, width = 12)
+
+
+```
+
+
+
 
 
 ```{r, eval = F}
@@ -505,9 +658,11 @@ GenPlot_with_CI <- ggplot(GenIndices_long, aes(x = Network, y = Value, fill = Ne
         panel.background = element_blank(),
         plot.background = element_blank())
 
+library(scales)
 # Plot: Pathway Indices with Confidence Interval (Boxplot)
 PathPlot_with_CI <- ggplot(PathIndices_long, aes(x = Network, y = Value, fill = Network)) +
   geom_boxplot(outlier.size = 2, outlier.colour = "red", alpha = 0.7) +
+  scale_y_continuous(labels = label_percent(scale = 100)) + 
   labs(title = "Finn Cycling Index (FCIb)",
        x = "Year",
        y = "Value",
@@ -602,9 +757,9 @@ variance_IS <- ggplot(link_weights_all, aes(x = Network, y = Variance_Link_Weigh
   geom_boxplot(outlier.size = 2, outlier.colour = "red", alpha = 0.7) +
 #  geom_text(data = mean_values, aes(label = round(Mean_Link_Weight, 3), y = max(link_weights_all$Variance_Link_Weight) *0.9),
     #        position = position_dodge(width = 0.95), size = 5, vjust = -0.2) +
-  labs(title = "Interaction strength (IS)",
+  labs(title = "Variance of Interaction Strength (VarIS)",
        x = "Year",
-       y = expression("IS (mmol C / m"^2*"/day)"),
+       y = expression("VarIS (mmol C / m"^2*"/day)"),
        fill = "Year") +
   scale_fill_manual(values = col_palette, "paired") +
   theme_bw() +
@@ -751,7 +906,7 @@ variance_IS <- variance_IS +
         axis.title.x = element_text(size = 14),
         panel.background = element_blank(),  # Corrected typo
         plot.background = element_blank()) +  # Corrected typo
-  labs(y = expression("IS (mmol C / m"^2*"/day)")) +
+  labs(y = expression("VarIS (mmol C / m"^2*"/day)")) +
   annotate("text", x = -Inf, y = Inf, label = "C", hjust = -0.5, vjust = 1.5, size = 6, fontface = "bold")
 
 PathPlot_with_CI <- PathPlot_with_CI + 
@@ -763,7 +918,7 @@ PathPlot_with_CI <- PathPlot_with_CI +
         axis.title.x = element_text(size = 14),
         panel.background = element_blank(),  # Corrected typo
         plot.background = element_blank()) +  # Corrected typo
-  labs(y = expression("FCIb (mmol C / m"^2*"/day)")) +
+  labs(y = expression("FCIb % (mmol C / m"^2*"/day)")) +
   annotate("text", x = -Inf, y = Inf, label = "B", hjust = -0.5, vjust = 1.5, size = 6, fontface = "bold")
 
 production_plot <- production_plot +
@@ -783,7 +938,7 @@ final_plot <- first_plot / second_plot +
   plot_layout(ncol = 1, heights = c(1, 1))
 
 # Save the final plot
-ggsave("~/phD/WP1_TemporalFW/manuscript/Figures/ENA_indices.jpg", plot = final_plot, dpi = 300, width = 15, height = 10)
+ggsave("~/phD/WP1_TemporalFW/manuscript/Figures/ENA_indices.jpg", plot = final_plot, dpi = 300, width = 13, height = 9)
 ```
 
 
