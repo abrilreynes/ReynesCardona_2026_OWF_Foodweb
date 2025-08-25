@@ -1,6 +1,6 @@
 ## 📘 Manuscript title XXX
 
-  <img src="Icon.png" alt="OWF Icon" width="150" style="vertical-align:middle; margin-right:15px;"/> 
+  <img src="Icon.png" alt="OWF Icon" width="150" style="vertical-align:middle; margin-right:18px;"/> 
 
 This repository contains the code and data used in the analyses presented in the manuscript **"XXXXX"**. It includes RMarkdown scripts, input files, and functions used to reproduce all results presented in the paper.
 
