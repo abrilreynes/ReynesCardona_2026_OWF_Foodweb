@@ -1,6 +1,6 @@
-## 📘 Manuscript title XXX
+## Offshore wind farm development alters food web structure and carbon flows: insights from a 14-year data-driven study
 
-  <img src="Icon.png" alt="OWF Icon" width="150" style="vertical-align:middle; margin-right:12px;"/> 
+  <img src="Icon.png" alt="OWF Icon" width="180" style="vertical-align:middle; margin-right:12px;"/> 
 
 This repository contains the code and data used in the analyses presented in the manuscript **"XXXXX"**. It includes RMarkdown scripts, input files, and functions used to reproduce all results presented in the paper.
 
