@@ -619,6 +619,8 @@ PathInd12 <- calculate_indices(LIM.abril12, results_2012, "2012", "path")
 PathInd16 <- calculate_indices(LIM.abril16, results_2016, "2016", "path")
 PathInd19 <- calculate_indices(LIM.abril19, results_2019, "2019", "path")
 PathInd22 <- calculate_indices(LIM.abril22, results_2022, "2022", "path")
+
+
 ```
 
 ```{r}
@@ -682,6 +684,40 @@ PathPlot_with_CI
 ```
 
 
+#Ascendency
+```{r}
+AscInd09 <- calculate_Asc_indices(LIM.abril09, results_2009, "2009")
+AscInd12 <- calculate_Asc_indices(LIM.abril12, results_2012, "2012")
+AscInd16 <- calculate_Asc_indices(LIM.abril16, results_2016, "2016")
+AscInd19 <- calculate_Asc_indices(LIM.abril19, results_2019, "2019")
+AscInd22 <- calculate_Asc_indices(LIM.abril22, results_2022, "2022")
+
+AscIndices_all <- bind_rows(AscInd09, AscInd12, AscInd16, AscInd19, AscInd22)
+AscIndices_all <- AscIndices_all[grepl("^Total", rownames(AscIndices_all), ignore.case = TRUE), ]
+
+AscIndices_long <- AscIndices_all %>%
+  pivot_longer(cols = -c(Network, Iteration), names_to = "Index", values_to = "Value") %>%
+  mutate(Value = as.numeric(Value)) %>%
+  filter(!is.na(Value))
+#, Index == "Overhead")  # Only keep T..
+
+# Plot: Asceral Indices with Confidence Interval (Boxplot)
+AscPlot_with_CI <- ggplot(AscIndices_long, aes(x = Network, y = Value, fill = Network)) +
+  geom_boxplot(outlier.size = 2, outlier.colour = "red", alpha = 0.7) +
+  facet_wrap(~Index, scales = "free") +
+  labs(title = "Ascendency",
+       x = "Year",
+       y = expression(" XXX (mmol C / m"^2*"/day)"),
+       fill = "Year") +
+  scale_fill_manual(values = col_palette) +
+  theme_bw() +
+  theme(axis.text.x = element_text(hjust = 1),
+        strip.text = element_text(size = 10),
+        panel.background = element_blank(),
+        plot.background = element_blank())
+
+
+```
 
 
 #Interaction strenght
@@ -689,37 +725,40 @@ PathPlot_with_CI
 
 col_palette <- RColorBrewer::brewer.pal(9, "Set2")
 
-FM_2009 = LIM::Flowmatrix(LIM.abril09, web = colMeans(results_2009))
-FM_2012 = LIM::Flowmatrix(LIM.abril12, web = colMeans(results_2012))
-FM_2016 = LIM::Flowmatrix(LIM.abril16, web = colMeans(results_2016))
-FM_2019 = LIM::Flowmatrix(LIM.abril19, web = colMeans(results_2019))
-FM_2022 = LIM::Flowmatrix(LIM.abril22, web = colMeans(results_2022))
+# Calcular para cada red y combinar resultados
+df_list <- list(
+  calculate_link_weights_distribution_simple(results_2009, "2009"),
+  calculate_link_weights_distribution_simple(results_2012, "2012"),
+  calculate_link_weights_distribution_simple(results_2016, "2016"),
+  calculate_link_weights_distribution_simple(results_2019, "2019"),
+  calculate_link_weights_distribution_simple(results_2022, "2022")
+)
 
-link_weights_2009 <- calculate_link_weights_distribution(FM_2009, results_2009, "2009")
-link_weights_2012 <- calculate_link_weights_distribution(FM_2012, results_2012, "2012")
-link_weights_2016 <- calculate_link_weights_distribution(FM_2016, results_2016, "2016")
-link_weights_2019 <- calculate_link_weights_distribution(FM_2019, results_2019, "2019")
-link_weights_2022 <- calculate_link_weights_distribution(FM_2022, results_2022, "2022")
+link_weights_all <- bind_rows(df_list)
 
-# Combine results from all years
-link_weights_all <- bind_rows(link_weights_2009, link_weights_2012, link_weights_2016, link_weights_2019, link_weights_2022)
-
-# Summary and plotting
-# Calculate summary statistics across all years
-summary_stats <- link_weights_all %>%
+# Calcular medias por año para anotar en el plot
+mean_values <- link_weights_all %>%
   group_by(Network) %>%
-  summarise(
-    Mean_of_Mean_Link_Weight = mean(Mean_Link_Weight),
-    Variance_of_Link_Weight = mean(Variance_Link_Weight),
-    Mean_SD_Link_Weight = mean(SD_Link_Weight)
-  )
+  summarize(Mean_Link_Weight = mean(Mean_Link_Weight),
+            Variance_link_weight =  mean(Variance_Link_Weight)) 
 
-# Print summary statistics
-print(summary_stats)
+# Boxplot de la varianza de los pesos de enlace con anotaciones de media
+variance_IS <- ggplot(link_weights_all, aes(x = Network, y = Variance_Link_Weight, fill = Network)) +
+  geom_boxplot(outlier.size = 2, outlier.colour = "red", alpha = 0.7) +
+# geom_text(data = mean_values, aes(label = round(Mean_Link_Weight, 3), y = max(link_weights_all$Variance_Link_Weight) *0.9),
+          #  position = position_dodge(width = 0.95), size = 5, vjust = -0.2) +
+  labs(title = "Variance of Interaction Strength (VarIS)",
+       x = "Year",
+       y = expression("VarIS (mmol C / m"^2*"/day)"),
+       fill = "Year") +
+  scale_fill_manual(values = col_palette, "paired") +
+  theme_bw() +
+  theme(axis.text.x = element_text(hjust = 1),
+        strip.text = element_text(size = 10), 
+        panel.background = element_blank(), 
+        plot.background = element_blank())
 
-#write.csv(summary_stats, "~/phD/WP1_TemporalFW/LIM/interaction_Strenght_stats_Results.csv")
-
-# Plot the distribution of link weights across years
+# Plot the distribution of mean link weights across years
 IS = ggplot(link_weights_all, aes(x = Mean_Link_Weight, fill = Network)) +
   facet_wrap(~ Network, scales = "free") +
   scale_fill_manual(values = col_palette) + 
@@ -733,41 +772,8 @@ IS = ggplot(link_weights_all, aes(x = Mean_Link_Weight, fill = Network)) +
         panel.background = element_blank(), 
         plot.background = element_blank())
 
-col_palette <- RColorBrewer::brewer.pal(9, "Set1")
-
-# Calcular para cada red y combinar resultados
-df_list <- list(
-  calculate_link_weights_distribution2(FM_2009, results_2009, "2009"),
-  calculate_link_weights_distribution2(FM_2012, results_2012, "2012"),
-  calculate_link_weights_distribution2(FM_2016, results_2016, "2016"),
-  calculate_link_weights_distribution2(FM_2019, results_2019, "2019"),
-  calculate_link_weights_distribution2(FM_2022, results_2022, "2022")
-)
-
-link_weights_all <- bind_rows(df_list)
-
-# Calcular medias por año para anotar en el plot
-mean_values <- link_weights_all %>%
-  group_by(Network) %>%
-  summarize(Mean_Link_Weight = mean(Mean_Link_Weight),
-            Variance_link_weight =  mean(Variance_Link_Weight)) 
 
 
-# Boxplot de la varianza de los pesos de enlace con anotaciones de media
-variance_IS <- ggplot(link_weights_all, aes(x = Network, y = Variance_Link_Weight, fill = Network)) +
-  geom_boxplot(outlier.size = 2, outlier.colour = "red", alpha = 0.7) +
-#  geom_text(data = mean_values, aes(label = round(Mean_Link_Weight, 3), y = max(link_weights_all$Variance_Link_Weight) *0.9),
-    #        position = position_dodge(width = 0.95), size = 5, vjust = -0.2) +
-  labs(title = "Variance of Interaction Strength (VarIS)",
-       x = "Year",
-       y = expression("VarIS (mmol C / m"^2*"/day)"),
-       fill = "Year") +
-  scale_fill_manual(values = col_palette, "paired") +
-  theme_bw() +
-  theme(axis.text.x = element_text(hjust = 1),
-        strip.text = element_text(size = 10), 
-        panel.background = element_blank(), 
-        plot.background = element_blank())
 
 ```
 

@@ -45,71 +45,65 @@ calculate_indices <- function(LIM, results, year_label, index_type) {
 
 
 # Define function to calculate link weight distribution statistics for a given year
-calculate_link_weights_distribution <- function(base_matrix, results, year_label) {
+
+calculate_link_weights_distribution_simple <- function(results, year_label) {
   n_iterations <- nrow(results)
   
-  # Initialize lists to store results for mean, variance, and standard deviation of link weights
+  # Initialize vectors for mean and variance of each iteration
   mean_list <- numeric(n_iterations)
   variance_list <- numeric(n_iterations)
-  sd_list <- numeric(n_iterations)
+  
+  # Loop through each iteration
+  for (i in 1:n_iterations) {
+    flows <- results[i, ]
+    flows <- flows[flows > 0]  # Remove zeros
+    
+    mean_list[i] <- mean(flows)
+    variance_list[i] <- var(flows)
+  }
+  
+  # Create data frame for iteration-level stats
+  iteration_stats <- data.frame(
+    Iteration = 1:n_iterations,
+    Mean_Link_Weight = mean_list,
+    Variance_Link_Weight = variance_list,
+    Network = year_label
+  )
+}
+
+calculate_Asc_indices <- function(LIM, results, year_label) {
+  n_iterations <- nrow(results)
+  
+  # Initialize data frame to store results
+  indices_list <- list()
   
   # Loop over each iteration
   for (j in 1:n_iterations) {
-    # Clone the base matrix and populate it with current iteration's flow values
-    fm <- base_matrix
-    fm[] <- results[j, ]  # Assuming 'results[j, ]' has the right dimensions to fill 'fm'
+    # Calculate the flow matrix for the current iteration
+    fm <- Flowmatrix(LIM, results[j,])
     
-    # Flatten the matrix to get all link weights and remove zeros
-    link_weights <- as.vector(fm)
-    link_weights <- link_weights[link_weights > 0]
+    # Remove rows/cols that sum to zero and remove Inputs from columns and Outputs from rows
+    Import <- c("PHY", "DIC")
+    Export <- c("EXP", "BUR")
+    #Dissipation <- c("DIC")
     
-    # Calculate statistics for the link weights
-    mean_list[j] <- mean(link_weights)
-    variance_list[j] <- var(link_weights)
-    sd_list[j] <- sd(link_weights)
+    # Redefine in/outputs in case some were set to zero and eliminated
+    Import_filtered <- Import[Import %in% rownames(fm)]
+    Export_filtered <- Export[Export %in% colnames(fm)]
+    
+    # Calculate indices for the current iteration
+    indices <- AscInd(Flow = fm,
+                      Import = Import_filtered, Export = Export_filtered, Dissipation = NULL)
+    
+    # Append results to list
+    indices_list[[j]] <- indices
   }
   
-  # Create data frame with the calculated statistics for each iteration
-  stats_df <- data.frame(
-    Iteration = 1:n_iterations,
-    Mean_Link_Weight = mean_list,
-    Variance_Link_Weight = variance_list,
-    SD_Link_Weight = sd_list,
-    Network = year_label
-  )
+  # Convert list of results to data frame
+  indices_df <- do.call(rbind, indices_list) %>% data.frame()
+  indices_df$Iteration <- 1:n_iterations
+  indices_df$Network <- year_label
   
-  return(stats_df)
+  return(indices_df)
 }
 
-calculate_link_weights_distribution2 <- function(base_matrix, results, year_label) {
-  n_iterations <- nrow(results)
-  
-  # Listas para almacenar varianza y media de cada repeticion
-  variance_list <- numeric(n_iterations)
-  mean_list <- numeric(n_iterations)
-  
-  # Loop por cada repeticion del modelo
-  for (j in 1:n_iterations) {
-    # Crear matriz de flujo para esta iteracion
-    fm <- base_matrix
-    fm[] <- results[j, ]
-    
-    # Aplanar y eliminar ceros
-    link_weights <- as.vector(fm)
-    link_weights <- link_weights[link_weights > 0]
-    
-    # Calcular varianza y media de esta iteracion
-    variance_list[j] <- var(link_weights)
-    mean_list[j] <- mean(link_weights)
-  }
-  
-  # Crear data frame con varianza y media de cada iteracion
-  stats_df <- data.frame(
-    Iteration = 1:n_iterations,
-    Variance_Link_Weight = variance_list,
-    Mean_Link_Weight = mean_list,
-    Network = year_label
-  )
-  
-  return(stats_df)
-}
