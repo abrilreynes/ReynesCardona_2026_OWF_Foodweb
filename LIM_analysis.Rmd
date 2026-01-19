@@ -138,193 +138,101 @@ axis(2, las=2)
 
 ```
 
-
-#Calculate the variables for each repetition
-
-**Resp:** Value of the flow going to DIC **Uptake:** All flows going to that compartment **Assimilation:** Uptake minus the flows going to detritus.
-**Production:** Assimilation minus respiration
-
-```{r, echo = F, fig.width=13, fig.height=10, include = F}
-
-# Create a matrix with rows as number of variables, and columns as number of repetitons (to store the variables of each repetition and afterwards make stats)
-Var_2009 <- matrix(NA, 
-                             nrow = LIM.abril09$NVariables,
-                             ncol = nrow(results_2009),
-                             dimnames = list(LIM.abril09$Variables, 
-                                             1:nrow(results_2009)))
-
-for (i in 1:nrow(results_2009)) {
-    Var_2009[, i] <- Variables(LIM.abril09, results_2009[i, ])$values
-}
-
-mean_sd_2009 <- t(apply(Var_2009, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE)))) #calculate mean and standard deviation for each variable
-
-results_2009_stats <- data.frame(
-  mean = round(mean_sd_2009[, 1], 4),
-  sd = round(mean_sd_2009[, 2], 4),
-  row.names = rownames(Var_2009),
-    food_web = "2009"
-)
-
-
-
-# Rename columns
-colnames(results_2009_stats) <- c("mean_2009", "sd_2009")
-
-# Repeat for other years
-Var_2012 <- matrix(NA, 
-                             nrow = LIM.abril12$NVariables,
-                             ncol = nrow(results_2012),
-                             dimnames = list(LIM.abril12$Variables, 
-                                             1:nrow(results_2012)))
-
-for (i in 1:nrow(results_2012)) {
-    Var_2012[, i] <- Variables(LIM.abril12, results_2012[i, ])$values
-}
-
-mean_sd_2012 <- t(apply(Var_2012, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE))))
-
-results_2012_stats <- data.frame(
-  mean = round(mean_sd_2012[, 1], 4),
-  sd = round(mean_sd_2012[, 2], 4),
-  row.names = rownames(Var_2012),
- food_web = "2012"
-)
-
-# Rename columns
-colnames(results_2012_stats) <- c("mean_2012", "sd_2012")
-
-# 2016
-Var_2016 <- matrix(NA, 
-                             nrow = LIM.abril16$NVariables,
-                             ncol = nrow(results_2016),
-                             dimnames = list(LIM.abril16$Variables, 
-                                             1:nrow(results_2016)))
-
-for (i in 1:nrow(results_2016)) {
-    Var_2016[, i] <- Variables(LIM.abril16, results_2016[i, ])$values
-}
-
-mean_sd_2016 <- t(apply(Var_2016, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE))))
-
-results_2016_stats <- data.frame(
-  mean = round(mean_sd_2016[, 1], 5),
-  sd = round(mean_sd_2016[, 2], 5),
-  row.names = rownames(Var_2016),
- food_web = "2016"
-)
-
-# Rename columns
-colnames(results_2016_stats) <- c("mean_2016", "sd_2016")
-
-
-# 2019
-Var_2019 <- matrix(NA, 
-                             nrow = LIM.abril19$NVariables,
-                             ncol = nrow(results_2019),
-                             dimnames = list(LIM.abril19$Variables, 
-                                             1:nrow(results_2019)))
-
-for (i in 1:nrow(results_2019)) {
-    Var_2019[, i] <- Variables(LIM.abril19, results_2019[i, ])$values
-}
-
-mean_sd_2019 <- t(apply(Var_2019, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE))))
-
-results_2019_stats <- data.frame(
-  mean = round(mean_sd_2019[, 1], 4),
-  sd = round(mean_sd_2019[, 2], 4),
-  row.names = rownames(Var_2019),
- food_web = "2019"
-)
-
- # 2022
-Var_2022 <- matrix(NA, 
-                             nrow = LIM.abril22$NVariables,
-                             ncol = nrow(results_2022),
-                             dimnames = list(LIM.abril22$Variables, 
-                                             1:nrow(results_2022)))
-
-for (i in 1:nrow(results_2022)) {
-    Var_2022[, i] <- Variables(LIM.abril22, results_2022[i, ])$values
-}
-
-# Apply the function to each row of the matrix (x represents the row values, Margin = 1).
-# For each row, calculate the mean and standard deviation, ignoring NA values.
-mean_sd_2022 <- t(apply(Var_2022, 1, function(x) c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE))))
-
-results_2022_stats <- data.frame(
-  mean = round(mean_sd_2022[, 1], 4),
-  sd = round(mean_sd_2022[, 2], 4),
-  row.names = rownames(Var_2022),
- food_web = "2022"
-)
-
-# Rename columns
-colnames(results_2022_stats) <- c("mean_2022", "sd_2022")
-
-all_food_web_stats <- bind_rows(
-  results_2009_stats,
-  results_2012_stats,
-  results_2016_stats,
-  results_2019_stats,
-  results_2022_stats
-)
-
-#write.csv(all_food_web_stats, "~/phD/WP1_TemporalFW/LIM/variables_LIM.csv")
-
-```
-
 #Download food web flows
 ```{r}
 
 # 2009
 mean_2009 <- colMeans(results_2009, na.rm = TRUE)
 sd_2009   <- apply(results_2009, 2, sd, na.rm = TRUE)
+min_2009  <- apply(results_2009, 2, min, na.rm = TRUE)
+max_2009  <- apply(results_2009, 2, max, na.rm = TRUE)
+ci_lower_2009 <- apply(results_2009, 2, quantile, probs = 0.025, na.rm = TRUE)
+ci_upper_2009 <- apply(results_2009, 2, quantile, probs = 0.975, na.rm = TRUE)
+
 stats_2009 <- data.frame(
   Flow = names(mean_2009),
   mean = mean_2009,
   sd = sd_2009,
+  min = min_2009,
+  max = max_2009,
+  ci_lower = ci_lower_2009,
+  ci_upper = ci_upper_2009,
   food_web_year = "2009"
 )
 
 # 2012
 mean_2012 <- colMeans(results_2012, na.rm = TRUE)
 sd_2012   <- apply(results_2012, 2, sd, na.rm = TRUE)
+min_2012  <- apply(results_2012, 2, min, na.rm = TRUE)
+max_2012  <- apply(results_2012, 2, max, na.rm = TRUE)
+ci_lower_2012 <- apply(results_2012, 2, quantile, probs = 0.025, na.rm = TRUE)
+ci_upper_2012 <- apply(results_2012, 2, quantile, probs = 0.975, na.rm = TRUE)
+
 stats_2012 <- data.frame(
   Flow = names(mean_2012),
   mean = mean_2012,
   sd = sd_2012,
+  min = min_2012,
+  max = max_2012,
+  ci_lower = ci_lower_2012,
+  ci_upper = ci_upper_2012,
   food_web_year = "2012"
 )
 
 # 2016
 mean_2016 <- colMeans(results_2016, na.rm = TRUE)
 sd_2016   <- apply(results_2016, 2, sd, na.rm = TRUE)
+min_2016  <- apply(results_2016, 2, min, na.rm = TRUE)
+max_2016  <- apply(results_2016, 2, max, na.rm = TRUE)
+ci_lower_2016 <- apply(results_2016, 2, quantile, probs = 0.025, na.rm = TRUE)
+ci_upper_2016 <- apply(results_2016, 2, quantile, probs = 0.975, na.rm = TRUE)
+
 stats_2016 <- data.frame(
   Flow = names(mean_2016),
   mean = mean_2016,
   sd = sd_2016,
+  min = min_2016,
+  max = max_2016,
+  ci_lower = ci_lower_2016,
+  ci_upper = ci_upper_2016,
   food_web_year = "2016"
 )
 
 # 2019
 mean_2019 <- colMeans(results_2019, na.rm = TRUE)
 sd_2019   <- apply(results_2019, 2, sd, na.rm = TRUE)
+min_2019  <- apply(results_2019, 2, min, na.rm = TRUE)
+max_2019  <- apply(results_2019, 2, max, na.rm = TRUE)
+ci_lower_2019 <- apply(results_2019, 2, quantile, probs = 0.025, na.rm = TRUE)
+ci_upper_2019 <- apply(results_2019, 2, quantile, probs = 0.975, na.rm = TRUE)
+
 stats_2019 <- data.frame(
   Flow = names(mean_2019),
   mean = mean_2019,
   sd = sd_2019,
+  min = min_2019,
+  max = max_2019,
+  ci_lower = ci_lower_2019,
+  ci_upper = ci_upper_2019,
   food_web_year = "2019"
 )
 
 # 2022
 mean_2022 <- colMeans(results_2022, na.rm = TRUE)
 sd_2022   <- apply(results_2022, 2, sd, na.rm = TRUE)
+min_2022  <- apply(results_2022, 2, min, na.rm = TRUE)
+max_2022  <- apply(results_2022, 2, max, na.rm = TRUE)
+ci_lower_2022 <- apply(results_2022, 2, quantile, probs = 0.025, na.rm = TRUE)
+ci_upper_2022 <- apply(results_2022, 2, quantile, probs = 0.975, na.rm = TRUE)
+
 stats_2022 <- data.frame(
   Flow = names(mean_2022),
   mean = mean_2022,
   sd = sd_2022,
+  min = min_2022,
+  max = max_2022,
+  ci_lower = ci_lower_2022,
+  ci_upper = ci_upper_2022,
   food_web_year = "2022"
 )
 
@@ -337,14 +245,197 @@ all_flow_stats <- dplyr::bind_rows(
   stats_2022
 )
 
+
 # Write to CSV
-#write.csv(all_flow_stats, "~/phD/WP1_TemporalFW/LIM/flows_LIM.csv", row.names = FALSE)
+write.csv(all_flow_stats, "~/phD/WP1_TemporalFW/LIM/flows_LIM.csv", row.names = FALSE)
 
 
+#Amount of carbon exported
 
+# Step 1: Calculate total export per year
+export_stats <- all_flow_stats %>%
+  # Keep only flows going to EXP
+  filter(grepl("EXP$", Flow)) %>%
+  group_by(food_web_year) %>%
+  summarise(
+    mean_export = sum(mean, na.rm = TRUE),
+    sd_export   = sqrt(sum(sd^2, na.rm = TRUE)),  # assuming independence
+    min_export  = sum(min, na.rm = TRUE),
+    max_export  = sum(max, na.rm = TRUE),
+    lci_export  = sum(ci_lower, na.rm = TRUE),
+    uci_export  = sum(ci_upper, na.rm = TRUE)
+  )
+
+# Step 2: Calculate total flow per year
+total_flow <- all_flow_stats %>%
+  group_by(food_web_year) %>%
+  summarise(
+    mean_total = sum(mean, na.rm = TRUE),
+    sd_total   = sqrt(sum(sd^2, na.rm = TRUE)),
+    min_total  = sum(min, na.rm = TRUE),
+    max_total  = sum(max, na.rm = TRUE),
+    lci_total  = sum(ci_lower, na.rm = TRUE),
+    uci_total  = sum(ci_upper, na.rm = TRUE)
+  )
+
+# Step 3: Combine and calculate percentage exported
+export_summary <- export_stats %>%
+  left_join(total_flow, by = "food_web_year") %>%
+  mutate(
+    percent_export_mean = (mean_export / mean_total) * 100,
+    percent_export_lci  = (lci_export  / uci_total) * 100,
+    percent_export_uci  = (uci_export  / lci_total) * 100
+  )
+
+# View the result
+export_summary
 ```
 
 
+#Calculate the variables for each repetition
+
+**Resp:** Value of the flow going to DIC **Uptake:** All flows going to that compartment **Assimilation:** Uptake minus the flows going to detritus.
+**Production:** Assimilation minus respiration
+
+```{r, echo = F, fig.width=13, fig.height=10, include = F}
+
+# -----------------------------
+# 2009
+# -----------------------------
+Var_2009 <- matrix(NA, 
+                   nrow = LIM.abril09$NVariables,
+                   ncol = nrow(results_2009),
+                   dimnames = list(LIM.abril09$Variables, 1:nrow(results_2009)))
+
+for (i in 1:nrow(results_2009)) {
+    Var_2009[, i] <- Variables(LIM.abril09, results_2009[i, ])$values
+}
+
+results_2009_stats <- data.frame(
+    variable = LIM.abril09$Variables,
+  mean     = round(apply(Var_2009, 1, mean, na.rm = TRUE), 4),
+  sd       = round(apply(Var_2009, 1, sd, na.rm = TRUE), 4),
+  min      = round(apply(Var_2009, 1, min, na.rm = TRUE), 4),
+  max      = round(apply(Var_2009, 1, max, na.rm = TRUE), 4),
+  ci_lower = round(apply(Var_2009, 1, quantile, probs = 0.025, na.rm = TRUE), 4),
+  ci_upper = round(apply(Var_2009, 1, quantile, probs = 0.975, na.rm = TRUE), 4),
+  row.names = rownames(Var_2009),
+  food_web = "2009"
+)
+
+# -----------------------------
+# 2012
+# -----------------------------
+Var_2012 <- matrix(NA, 
+                   nrow = LIM.abril12$NVariables,
+                   ncol = nrow(results_2012),
+                   dimnames = list(LIM.abril12$Variables, 1:nrow(results_2012)))
+
+for (i in 1:nrow(results_2012)) {
+    Var_2012[, i] <- Variables(LIM.abril12, results_2012[i, ])$values
+}
+
+results_2012_stats <- data.frame(
+    variable = LIM.abril12$Variables,
+  mean     = round(apply(Var_2012, 1, mean, na.rm = TRUE), 4),
+  sd       = round(apply(Var_2012, 1, sd, na.rm = TRUE), 4),
+  min      = round(apply(Var_2012, 1, min, na.rm = TRUE), 4),
+  max      = round(apply(Var_2012, 1, max, na.rm = TRUE), 4),
+  ci_lower = round(apply(Var_2012, 1, quantile, probs = 0.025, na.rm = TRUE), 4),
+  ci_upper = round(apply(Var_2012, 1, quantile, probs = 0.975, na.rm = TRUE), 4),
+  row.names = rownames(Var_2012),
+  food_web = "2012"
+)
+
+# -----------------------------
+# 2016
+# -----------------------------
+Var_2016 <- matrix(NA, 
+                   nrow = LIM.abril16$NVariables,
+                   ncol = nrow(results_2016),
+                   dimnames = list(LIM.abril16$Variables, 1:nrow(results_2016)))
+
+for (i in 1:nrow(results_2016)) {
+    Var_2016[, i] <- Variables(LIM.abril16, results_2016[i, ])$values
+}
+
+results_2016_stats <- data.frame(
+  
+    variable = LIM.abril16$Variables,
+  mean     = round(apply(Var_2016, 1, mean, na.rm = TRUE), 4),
+  sd       = round(apply(Var_2016, 1, sd, na.rm = TRUE), 4),
+  min      = round(apply(Var_2016, 1, min, na.rm = TRUE), 4),
+  max      = round(apply(Var_2016, 1, max, na.rm = TRUE), 4),
+  ci_lower = round(apply(Var_2016, 1, quantile, probs = 0.025, na.rm = TRUE), 4),
+  ci_upper = round(apply(Var_2016, 1, quantile, probs = 0.975, na.rm = TRUE), 4),
+  row.names = rownames(Var_2016),
+  food_web = "2016"
+)
+
+# -----------------------------
+# 2019
+# -----------------------------
+Var_2019 <- matrix(NA, 
+                   nrow = LIM.abril19$NVariables,
+                   ncol = nrow(results_2019),
+                   dimnames = list(LIM.abril19$Variables, 1:nrow(results_2019)))
+
+for (i in 1:nrow(results_2019)) {
+    Var_2019[, i] <- Variables(LIM.abril19, results_2019[i, ])$values
+}
+
+results_2019_stats <- data.frame(
+  
+    variable = LIM.abril19$Variables,
+  mean     = round(apply(Var_2019, 1, mean, na.rm = TRUE), 4),
+  sd       = round(apply(Var_2019, 1, sd, na.rm = TRUE), 4),
+  min      = round(apply(Var_2019, 1, min, na.rm = TRUE), 4),
+  max      = round(apply(Var_2019, 1, max, na.rm = TRUE), 4),
+  ci_lower = round(apply(Var_2019, 1, quantile, probs = 0.025, na.rm = TRUE), 4),
+  ci_upper = round(apply(Var_2019, 1, quantile, probs = 0.975, na.rm = TRUE), 4),
+  row.names = rownames(Var_2019),
+  food_web = "2019"
+)
+
+# -----------------------------
+# 2022
+# -----------------------------
+Var_2022 <- matrix(NA, 
+                   nrow = LIM.abril22$NVariables,
+                   ncol = nrow(results_2022),
+                   dimnames = list(LIM.abril22$Variables, 1:nrow(results_2022)))
+
+for (i in 1:nrow(results_2022)) {
+    Var_2022[, i] <- Variables(LIM.abril22, results_2022[i, ])$values
+}
+
+results_2022_stats <- data.frame(
+  
+    variable = LIM.abril22$Variables,
+  mean     = round(apply(Var_2022, 1, mean, na.rm = TRUE), 4),
+  sd       = round(apply(Var_2022, 1, sd, na.rm = TRUE), 4),
+  min      = round(apply(Var_2022, 1, min, na.rm = TRUE), 4),
+  max      = round(apply(Var_2022, 1, max, na.rm = TRUE), 4),
+  ci_lower = round(apply(Var_2022, 1, quantile, probs = 0.025, na.rm = TRUE), 4),
+  ci_upper = round(apply(Var_2022, 1, quantile, probs = 0.975, na.rm = TRUE), 4),
+  row.names = rownames(Var_2022),
+  food_web = "2022"
+)
+
+# -----------------------------
+# Combine all years
+# -----------------------------
+all_food_web_stats <- bind_rows(
+  results_2009_stats,
+  results_2012_stats,
+  results_2016_stats,
+  results_2019_stats,
+  results_2022_stats
+)
+
+#write.csv(all_food_web_stats, "~/phD/WP1_TemporalFW/LIM/variables_LIM.csv")
+
+```
 
 
 #Production and flows plot
@@ -357,10 +448,15 @@ selected_variables <- c("FlowsTOTR", "FlowsFROMTR", "ProdTURBINEROCK", "SeconPro
                         "TurbineTotal", "TotalRESP", "TotalUpta", "UptaTURBINEROCK")
 
 extract_year_stats <- function(stats, year) {
-  df <- stats[selected_variables, ]
-  colnames(df) <- c("mean", "sd")
+  # Filter only the selected variables
+  df <- stats %>% filter(variable %in% selected_variables)
+  
+  # Keep only the columns you want for plotting
+  df <- df %>% select(variable, mean, sd, min, max, ci_lower, ci_upper)
+  
+  # Add the year
   df$year <- year
-  df$variable <- selected_variables
+  
   df
 }
 
@@ -384,14 +480,34 @@ filtered_2016 <- results_2016[, !grepl(paste(exclude_patterns, collapse = "|"), 
 filtered_2019 <- results_2019[, !grepl(paste(exclude_patterns, collapse = "|"), colnames(results_2019))]
 filtered_2022 <- results_2022[, !grepl(paste(exclude_patterns, collapse = "|"), colnames(results_2022))]
 
-# Calculate total internal flows
-total_flows_stats <- data.frame(
-  mean = c(mean(rowSums(filtered_2009)), mean(rowSums(filtered_2012)), mean(rowSums(filtered_2016)),
-           mean(rowSums(filtered_2019)), mean(rowSums(filtered_2022))),
-  sd = c(sd(rowSums(filtered_2009)), sd(rowSums(filtered_2012)), sd(rowSums(filtered_2016)),
-         sd(rowSums(filtered_2019)), sd(rowSums(filtered_2022))),
-  year = c(2009, 2012, 2016, 2019, 2022),
-  variable = "Total Flows"
+# Compute row sums for each year
+total_2009 <- rowSums(filtered_2009)
+total_2012 <- rowSums(filtered_2012)
+total_2016 <- rowSums(filtered_2016)
+total_2019 <- rowSums(filtered_2019)
+total_2022 <- rowSums(filtered_2022)
+
+# Make a function to summarize
+summarize_total_flow <- function(x, year, var_name) {
+  data.frame(
+    mean     = mean(x),
+    sd       = sd(x),
+    min      = min(x),
+    max      = max(x),
+    ci_lower = quantile(x, 0.025),
+    ci_upper = quantile(x, 0.975),
+    year     = year,
+    variable = var_name
+  )
+}
+
+# Apply to each year
+total_flows_stats <- bind_rows(
+  summarize_total_flow(total_2009, 2009, "Total Flows"),
+  summarize_total_flow(total_2012, 2012, "Total Flows"),
+  summarize_total_flow(total_2016, 2016, "Total Flows"),
+  summarize_total_flow(total_2019, 2019, "Total Flows"),
+  summarize_total_flow(total_2022, 2022, "Total Flows")
 )
 
 # Extract turbine flows from combined_data (calculated in earlier section)
@@ -454,10 +570,10 @@ turbine_variables_plot <- ggplot(combined_plot_data, aes(x = year, y = mean, fil
 prod_vars <- c("SeconProd", "ProdTURBINEROCK")
 
 extract_prod_stats <- function(stats, year) {
-  df <- stats[prod_vars, ]
-  colnames(df) <- c("mean", "sd")
-  df$year <- year
-  df$variable <- prod_vars
+  df <- stats %>% 
+    filter(variable %in% prod_vars) %>% 
+    select(variable, mean, sd, min, max, ci_lower, ci_upper) %>% 
+    mutate(year = year)
   df
 }
 
@@ -537,6 +653,9 @@ production_plot <- ggplot(combined_prod, aes(x = factor(year), y = mean, fill = 
 production_plot
 
 turbine_variables_plot
+
+write.csv(combined_prod, "~/phD/WP1_TemporalFW/LIM/combined_prod_Variables_CI.csv")
+write.csv(combined_plot_data, "~/phD/WP1_TemporalFW/LIM/combined_plot_data.csv")
 
 ```
 #General second production plots
@@ -684,6 +803,72 @@ PathPlot_with_CI
 ```
 
 
+#Credible intervals of network indices
+```{r}
+
+PathIndices_all$Network = as.numeric(PathIndices_all$Network)
+PathIndices_all <- PathIndices_all %>%
+  mutate(
+    TSTC = as.numeric(TSTC),
+    TSTS = as.numeric(TSTS),
+    FCI = as.numeric(FCI),
+    FCIb = as.numeric(FCIb),
+    APL  = as.numeric(APL)
+  )
+
+CI_table_path <- PathIndices_all %>%
+  group_by(Network) %>%
+  summarise(
+    median_FCIb = median(FCIb),
+            sd_FCIb     = sd(FCIb, na.rm = TRUE),
+    min_FCIb = min(FCIb),
+    max_FCIb= max(FCIb),
+    CI_low_FCIb = quantile(FCIb, 0.025),
+    CI_high_FCIb = quantile(FCIb, 0.975),
+  )
+
+GenIndices_all$Network = as.numeric(GenIndices_all$Network)
+GenIndices_all <- GenIndices_all %>%
+  mutate(
+    T.. = as.numeric(`T..`),
+    TST = as.numeric(TST),
+    Lint = as.numeric(Lint),
+    Ltot = as.numeric(Ltot),
+    LD = as.numeric(LD),
+    C = as.numeric(C),
+    Tijbar = as.numeric(Tijbar),
+    TSTbar = as.numeric(TSTbar),
+    Cbar = as.numeric(Cbar)
+  )
+
+CI_table_Gen <- GenIndices_all %>%
+  group_by(Network) %>%
+  summarise(
+    median_T   = median(`T..`, na.rm = TRUE),
+        sd_T     = sd(`T..`, na.rm = TRUE),
+        min_T = min(`T..`),
+    max_T= max(`T..`),
+    CI_low_T   = quantile(`T..`, 0.025, na.rm = TRUE),
+    CI_high_T  = quantile(`T..`, 0.975, na.rm = TRUE),
+  )
+
+CI_table_Asc <- AscIndices_all %>%
+  group_by(Network) %>%
+  summarise(
+    median_T   = median(`ACratio`, na.rm = TRUE),
+        sd_T     = sd(`ACratio`, na.rm = TRUE),
+        min_T = min(`ACratio`),
+    max_T= max(ACratio),
+    CI_low_T   = quantile(`ACratio`, 0.025, na.rm = TRUE),
+    CI_high_T  = quantile(`ACratio`, 0.975, na.rm = TRUE),
+  )
+
+write.csv(CI_table_path, "~/phD/WP1_TemporalFW/LIM/PathIndices2_CI_table.csv", row.names = FALSE)
+write.csv(CI_table_Gen, "~/phD/WP1_TemporalFW/LIM/Genindices_CI_table.csv", row.names = FALSE)
+write.csv(CI_table_Asc, "~/phD/WP1_TemporalFW/LIM/Ascindices_CI_table.csv", row.names = FALSE)
+
+```
+
 #Ascendency
 ```{r}
 AscInd09 <- calculate_Asc_indices(LIM.abril09, results_2009, "2009")
@@ -698,16 +883,17 @@ AscIndices_all <- AscIndices_all[grepl("^Total", rownames(AscIndices_all), ignor
 AscIndices_long <- AscIndices_all %>%
   pivot_longer(cols = -c(Network, Iteration), names_to = "Index", values_to = "Value") %>%
   mutate(Value = as.numeric(Value)) %>%
-  filter(!is.na(Value))
-#, Index == "Overhead")  # Only keep T..
+  filter(Index == "ACratio")  # Only keep T..
+
+col_palette <- RColorBrewer::brewer.pal(9, "Set1")
 
 # Plot: Asceral Indices with Confidence Interval (Boxplot)
 AscPlot_with_CI <- ggplot(AscIndices_long, aes(x = Network, y = Value, fill = Network)) +
   geom_boxplot(outlier.size = 2, outlier.colour = "red", alpha = 0.7) +
-  facet_wrap(~Index, scales = "free") +
-  labs(title = "Ascendency",
+#  facet_wrap(~Index, scales = "free") +
+  labs(title = "Relative Ascendency (A/C)",
        x = "Year",
-       y = expression(" XXX (mmol C / m"^2*"/day)"),
+       y = expression(" (mmol C / m"^2*"/day)"),
        fill = "Year") +
   scale_fill_manual(values = col_palette) +
   theme_bw() +
@@ -715,6 +901,26 @@ AscPlot_with_CI <- ggplot(AscIndices_long, aes(x = Network, y = Value, fill = Ne
         strip.text = element_text(size = 10),
         panel.background = element_blank(),
         plot.background = element_blank())
+
+
+AscIndices_all$Network = as.numeric(AscIndices_all$Network)
+AscIndices_all <- AscIndices_all %>%
+  mutate(
+    ACratio = as.numeric(ACratio),
+  )
+
+CI_table_Asc <- AscIndices_all %>%
+  group_by(Network) %>%
+  summarise(
+    median_ACratio = median(ACratio),
+            sd_FACratio     = sd(ACratio, na.rm = TRUE),
+    min_ACratio = min(ACratio),
+    max_ACratio= max(ACratio),
+    CI_low_ACratio = quantile(ACratio, 0.025),
+    CI_high_ACratio = quantile(ACratio, 0.975),
+  )
+
+CI_table_Asc
 
 
 ```
@@ -763,7 +969,20 @@ IS = ggplot(link_weights_all, aes(x = Mean_Link_Weight, fill = Network)) +
   facet_wrap(~ Network, scales = "free") +
   scale_fill_manual(values = col_palette) + 
   geom_histogram(bins = 30, position = "dodge", alpha = 0.7) +
-  labs(title = "Interaction strength",
+  labs(title = "Mean link weight",
+       x = expression("mmol C / m"^2*"/day"),
+       y = "Frequency") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(hjust = 1),
+        strip.text = element_text(size = 10), 
+        panel.background = element_blank(), 
+        plot.background = element_blank())
+
+varIS = ggplot(link_weights_all, aes(x = Variance_Link_Weight, fill = Network)) +
+  facet_wrap(~ Network, scales = "free") +
+  scale_fill_manual(values = col_palette) + 
+  geom_histogram(bins = 30, position = "dodge", alpha = 0.7) +
+  labs(title = "Mean variance",
        x = expression("mmol C / m"^2*"/day"),
        y = "Frequency") +
   theme_minimal() + 
@@ -802,6 +1021,18 @@ FCIb_summary <- PathIndices_long %>%
     Variance = var(Value, na.rm = TRUE)
   )
 
+
+Asc_summary <-AscIndices_long %>%
+  group_by(Network) %>%
+  summarize(
+    Q1 = quantile(Value, 0.25, na.rm = TRUE),
+    Median = median(Value, na.rm = TRUE),
+    Q3 = quantile(Value, 0.75, na.rm = TRUE),
+    IQR = Q3 - Q1,
+    Variance = var(Value, na.rm = TRUE)
+  )
+
+
 IS_summary <- link_weights_all %>%
   group_by(Network) %>%
   summarize(
@@ -815,7 +1046,7 @@ IS_summary <- link_weights_all %>%
 # Print summaries
 print(T_summary)
 print(FCIb_summary)
-print(IS_summary)
+print(Asc_summary)
 ```
 
 
@@ -887,6 +1118,44 @@ pairwise_wilcox <- pairwise.wilcox.test(link_weights_all$Variance_Link_Weight, l
 
 print(pairwise_wilcox)
 
+AscIndices_all$ACratio = as.numeric(AscIndices_all$ACratio )
+
+# 1. Shapiro-Wilk test for normality in each year
+shapiro_results <- AscIndices_all %>%
+  group_by(Network) %>%
+  summarise(
+    W = shapiro.test(ACratio)$statistic,
+    p_value = shapiro.test(ACratio)$p.value
+  )
+
+print("Shapiro-Wilk normality test per group:")
+print(shapiro_results)
+
+# 2. Levene's test for equal variances
+print("Levene’s test for homogeneity of variances:")
+levene_result <- leveneTest(ACratio ~ Network, data = AscIndices_all)
+print(levene_result)
+
+# 3. Diagnostic plot (Q-Q)
+ggplot(AscIndices_all, aes(sample = ACratio)) +
+  stat_qq() + 
+  stat_qq_line() + 
+  facet_wrap(~ Network) +
+  theme_minimal() +
+  labs(title = "Q-Q plots for normality check")
+
+
+# Kruskal–Wallis test
+kruskal_test <- kruskal.test(ACratio ~ Network, data = AscIndices_all)
+print(kruskal_test)
+
+# Pairwise Wilcoxon test with Holm correction
+pairwise_wilcox <- pairwise.wilcox.test(AscIndices_all$`ACratio`, AscIndices_all$Network, 
+                                        p.adjust.method = "holm")
+
+print(pairwise_wilcox)
+
+
 ```
 
 
@@ -904,7 +1173,21 @@ GenPlot_with_CI <- GenPlot_with_CI +
   labs(y = expression("T.. (mmol C / m"^2*"/day)")) +
   annotate("text", x = -Inf, y = Inf, label = "A", hjust = -0.5, vjust = 1.5, size = 6, fontface = "bold")
 
-variance_IS <- variance_IS + 
+#variance_IS <- variance_IS + 
+ # theme(axis.text.x = element_text(size = 14),
+ #       axis.text.y = element_text(size = 14),  # Added this line
+
+#        plot.title = element_text(face = "plain", hjust = 0.5, size = 15),
+  #       legend.position = "none",
+  #       axis.title.y = element_text(size = 14),
+   #      axis.title.x = element_text(size = 14),
+   #      panel.background = element_blank(),  # Corrected typo
+   #      plot.background = element_blank()) +  # Corrected typo
+#   labs(y = expression("VarIS (mmol C / m"^2*"/day)")) +
+ #  annotate("text", x = -Inf, y = Inf, label = "C", hjust = -0.5, vjust = 1.5, size = 6, fontface = "bold")
+
+
+ascendency_IS <- AscPlot_with_CI + 
   theme(axis.text.x = element_text(size = 14),
         axis.text.y = element_text(size = 14),  # Added this line
         plot.title = element_text(face = "plain", hjust = 0.5, size = 15),
@@ -913,8 +1196,9 @@ variance_IS <- variance_IS +
         axis.title.x = element_text(size = 14),
         panel.background = element_blank(),  # Corrected typo
         plot.background = element_blank()) +  # Corrected typo
-  labs(y = expression("VarIS (mmol C / m"^2*"/day)")) +
+  labs(y = expression("A/C (mmol C / m"^2*"/day)")) +
   annotate("text", x = -Inf, y = Inf, label = "C", hjust = -0.5, vjust = 1.5, size = 6, fontface = "bold")
+
 
 PathPlot_with_CI <- PathPlot_with_CI + 
   theme(axis.text.x = element_text(size = 14),
@@ -935,7 +1219,7 @@ turbine_variables_plot <- turbine_variables_plot +
   annotate("text", x = -Inf, y = Inf, label = "E", hjust = -0.5, vjust = 1.5, size = 6, fontface = "bold")
 
 # Arrange the plots
-first_plot <- (GenPlot_with_CI | PathPlot_with_CI | variance_IS) + 
+first_plot <- (GenPlot_with_CI | PathPlot_with_CI | ascendency_IS) + 
   plot_layout(ncol = 3, heights = c(1))
 
 second_plot <- (production_plot + turbine_variables_plot) + 
@@ -1307,7 +1591,7 @@ The main principle behind the Raftery and Lewis diagnostic is that a correct sam
 
 This diagnostic provides multiple pieces of information, such as the burning value (M), an estimate of the sample size to ensure precise estimation of a prescribed quantile (N), a lower bound (Nmin), and a dependence factor (I).
 
-The dependance factor assesses the extent to which auto-correlation inflates the required sample size; values larger than 5 indicate a strong auto-correlation.
+The dependence factor assesses the extent to which auto-correlation inflates the required sample size; values larger than 5 indicate a strong auto-correlation.
 
 ```{r}
 q <- 0.025
@@ -1321,7 +1605,7 @@ The Geweke diagnostic is a classical statistical test of comparison of means app
 will be equal (Plummer et al., 2020), reflected by a Geweke Z-score
 between −1.96 and 1.96 (corresponding to p = 0.05).
 
-Evalautes stationarity, values should be between -1.96 and 1.96
+Evaluates stationarity, values should be between -1.96 and 1.96
 
 ```{r}
 frac1 <- 0.1
@@ -1369,21 +1653,16 @@ Shows the sample PDF p(x) where stationarity can be iferrred if P(x) approaches 
 
 **Trace plot and autocorrelation plots**
 Shows the mixing and autocorelation plots. You expect a catepillat for a well sampled flow.  Trace plots show the
-sampled value of a flow at each iteration of the MCMC chain. A well-
-sampled flow looks like a ’hairy caterpillar’ (Roy, 2020) i.e., a visually
-random pattern that indicates good mixing (van den Meersche et al.,
-2009) (Fig. 4 H).
+sampled value of a flow at each iteration of the MCMC chain. A well- sampled flow looks like a ’hairy caterpillar’ (Roy, 2020) i.e., a visually random pattern that indicates good mixing (van den Meersche et al., 2009) (Fig. 4 H).
 
-Autocorrelation plots indicate correlation between successive solutions and, therefore, the proportion of samples that can
-be considered ‘independent’ (Hogg and Foreman-Mackey, 2018). Specifically, the plots show the lag-k (sample) autocorrelation between k
-steps apart (Roy, 2020). For fast mixing MCMC chains, lag-k autocorrelation values drop to zero almost as quickly as k increases (Roy, 2020) (Fig. 4 I).
+Autocorrelation plots indicate correlation between successive solutions and, therefore, the proportion of samples that can be considered ‘independent’(Hogg and Foreman-Mackey, 2018). Specifically, the plots show the lag-k (sample) autocorrelation between k steps apart (Roy, 2020). For fast mixing MCMC chains, lag-k autocorrelation values drop to zero almost as quickly as k increases (Roy, 2020) (Fig. 4 I).
 
 *Run mean plots* 
 Test the sample efficiency. If it does not stabilize at a fixed value, then more iterations are needed.
 
 ```{r}
-results = as.data.frame(results_2009)
-mcmc_plots(results, flow = "JASSATR->SPOM")
+results = as.data.frame(results_2016)
+mcmc_plots(results,flow = "JASSATR->SPOM")
 ```
 
 #Check the convergence of the results
@@ -1480,4 +1759,9 @@ var(result_maxflow[2:50,"sdevs"])
 ```
 
 
+
+#Visualization of the network
+```{r}
+
+```
 

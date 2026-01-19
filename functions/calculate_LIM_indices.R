@@ -83,17 +83,18 @@ calculate_Asc_indices <- function(LIM, results, year_label) {
     fm <- Flowmatrix(LIM, results[j,])
     
     # Remove rows/cols that sum to zero and remove Inputs from columns and Outputs from rows
-    Import <- c("PHY", "DIC")
-    Export <- c("EXP", "BUR")
-    #Dissipation <- c("DIC")
+    Import <- c("PHY")
+    Export <- c("EXP")
+    Dissipation <- c("DIC")
     
     # Redefine in/outputs in case some were set to zero and eliminated
-    Import_filtered <- Import[Import %in% rownames(fm)]
-    Export_filtered <- Export[Export %in% colnames(fm)]
+   # Import_filtered <- Import[Import %in% rownames(fm)]
+    #Export_filtered <- Export[Export %in% colnames(fm)]
+    #Dissipation_filtered <- Dissipation[Dissipation %in% colnames(fm)]
     
     # Calculate indices for the current iteration
     indices <- AscInd(Flow = fm,
-                      Import = Import_filtered, Export = Export_filtered, Dissipation = NULL)
+                      Import = Import, Export = Export, Dissipation = Dissipation)
     
     # Append results to list
     indices_list[[j]] <- indices

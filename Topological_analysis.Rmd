@@ -589,6 +589,25 @@ print(final_plot)
 
 ggsave("~/phD/WP1_TemporalFW/manuscript/Figures/Topol_indices.jpg", plot = final_plot, dpi = 300, width = 9, height = 10)
 
+
+
+null_summary <- pf %>%
+  select(Network, TLmean, LOmnivory, modularity) %>%
+  pivot_longer(
+    cols = c(TLmean, LOmnivory, modularity),
+    names_to = "Index",
+    values_to = "value"
+  ) %>%
+  group_by(Network, Index) %>%
+  summarise(
+    null_median = median(value),
+    ci_lower = quantile(value, 0.025),
+    ci_upper = quantile(value, 0.975),
+    .groups = "drop"
+  )
+
+write.csv(null_summary, file = "~/phD/WP1_TemporalFW/LIM/null_summary.csv")
+
 ```
 
 #Pairwise test
@@ -870,13 +889,15 @@ hub_conn = rbind(hc_2009 , hc_2012, hc_2016, hc_2019, hc_2022)
 
 hub_conn = ggplot(hub_conn, aes(x = factor(modulo), fill = groups)) +
   geom_bar(position = "stack") +
-  facet_wrap(~ Network) +  # Create a separate graph for each year
+  facet_wrap(~ Network, scales = "free_x") +  # Create a separate graph for each year
   labs(title = "Module Types and Species Groups Across Years",
        x = "Module",
        y = "Count of Species",
        fill = "Species Type") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+  strip.placement = "outside",
+  panel.spacing = unit(1, "lines")) +
 scale_fill_manual(values = c(
   "#E69F00", # orange
   "#56B4E9", # sky blue
@@ -896,13 +917,18 @@ ggsave("~/phD/WP1_TemporalFW/manuscript/module_distribution.png", hub_conn)
 ```{r}
 
 library(gridExtra)
+library(ggrepel)
 
 hc_2009 = filter(hc_2009, Grouping == "Hard-substrate", 
                  among_module_conn >= 0.1)
 
 plot_2009 <- ggplot(hc_2009, aes(x = among_module_conn, y = within_module_degree, label = name)) +
-  geom_point(size = 3) + 
-  geom_text(vjust = -0.5, hjust = 0.5, size = 3) +  
+  geom_point(size = 1) + 
+  geom_text_repel(  direction = "both",     # allow up & down movement
+  force = 1,              # stronger repulsion
+  force_pull = 0.5,       # keep labels closer to points
+  max.overlaps = 20,
+  segment.color = "grey50") +  
   geom_vline(xintercept = 0.625, color = "grey1", linetype = "dashed") +  
   geom_hline(yintercept = 2.5, color = "grey1", linetype = "dashed") +    
   labs(x = "Among Module Connectivity", y = "Within Module Degree", title = "Node Topology Plot 2009") +
@@ -913,8 +939,12 @@ hc_2012 = filter(hc_2012, Grouping == "Hard-substrate",
                  among_module_conn >= 0.1)
 
 plot_2012 <- ggplot(hc_2012, aes(x = among_module_conn, y = within_module_degree, label = name)) +
-  geom_point(size = 3) + 
-  geom_text(vjust = -0.5, hjust = 0.5, size = 3) +  
+  geom_point(size = 1) + 
+  geom_text_repel(  direction = "both",     # allow up & down movement
+  force = 1,              # stronger repulsion
+  force_pull = 0.5,       # keep labels closer to points
+  max.overlaps = 20,
+  segment.color = "grey50") +  
   geom_vline(xintercept = 0.625, color = "grey1", linetype = "dashed") +  
   geom_hline(yintercept = 2.5, color = "grey1", linetype = "dashed") +    
   labs(x = "Among Module Connectivity", y = "Within Module Degree", title = "Node Topology Plot 2012") +
@@ -925,8 +955,12 @@ hc_2016 = filter(hc_2016, Grouping == "Hard-substrate",
                  among_module_conn >= 0.1)
 
 plot_2016 <- ggplot(hc_2016, aes(x = among_module_conn, y = within_module_degree, label = name)) +
-  geom_point(size = 3) + 
-  geom_text(vjust = -0.5, hjust = 0.5, size = 3) +  
+  geom_point(size = 1) + 
+  geom_text_repel(  direction = "both",     # allow up & down movement
+  force = 1,              # stronger repulsion
+  force_pull = 0.5,       # keep labels closer to points
+  max.overlaps = 20,
+  segment.color = "grey50") +  
   geom_vline(xintercept = 0.625, color = "grey1", linetype = "dashed") +  
   geom_hline(yintercept = 2.5, color = "grey1", linetype = "dashed") +    
   labs(x = "Among Module Connectivity", y = "Within Module Degree", title = "Node Topology Plot 2016") +
@@ -937,8 +971,12 @@ hc_2019 = filter(hc_2019, Grouping == "Hard-substrate",
                  among_module_conn >= 0.1)
 
 plot_2019 <- ggplot(hc_2019, aes(x = among_module_conn, y = within_module_degree, label = name)) +
-  geom_point(size = 3) + 
-  geom_text(vjust = -0.5, hjust = 0.5, size = 3) +  
+  geom_point(size = 1) + 
+  geom_text_repel(  direction = "both",     # allow up & down movement
+  force = 1,              # stronger repulsion
+  force_pull = 0.5,       # keep labels closer to points
+  max.overlaps = 20,
+  segment.color = "grey50") +  
   geom_vline(xintercept = 0.625, color = "grey1", linetype = "dashed") +  
   geom_hline(yintercept = 2.5, color = "grey1", linetype = "dashed") +    
   labs(x = "Among Module Connectivity", y = "Within Module Degree", title = "Node Topology Plot 2019") +
@@ -949,17 +987,36 @@ hc_2022 = filter(hc_2022, Grouping == "Hard-substrate",
                  among_module_conn >= 0.1)
 
 plot_2022 <- ggplot(hc_2022, aes(x = among_module_conn, y = within_module_degree, label = name)) +
-  geom_point(size = 3) + 
-  geom_text(vjust = -0.5, hjust = 0.5, size = 3) +  
+  geom_point(size = 1) + 
+  geom_text_repel(  direction = "both",     # allow up & down movement
+  force = 1,              # stronger repulsion
+  force_pull = 0.5,       # keep labels closer to points
+  max.overlaps = 20,
+  segment.color = "grey50") +  
   geom_vline(xintercept = 0.625, color = "grey1", linetype = "dashed") +  
   geom_hline(yintercept = 2.5, color = "grey1", linetype = "dashed") +    
   labs(x = "Among Module Connectivity", y = "Within Module Degree", title = "Node Topology Plot 2022") +
   theme_minimal()
 
-# Arrange in 2 columns x 3 rows
-topo_roles = grid.arrange(plot_2009, plot_2012, plot_2016, plot_2019, plot_2022, ncol = 2, nrow = 3)
+plots <- list(
+  "2009" = plot_2009,
+  "2012" = plot_2012,
+  "2016" = plot_2016,
+  "2019" = plot_2019,
+  "2022" = plot_2022
+)
 
-ggsave("~/phD/WP1_TemporalFW/manuscript/species_topol_roles.png", topo_roles, dpi = 300, width = 10, height = 7)
+for (yr in names(plots)) {
+  ggsave(
+    filename = paste0(
+      "~/phD/WP1_TemporalFW/manuscript/species_topol_roles_", yr, ".jpeg"
+    ),
+    plot = plots[[yr]],
+    dpi = 300,
+    width = 5,
+    height = 4
+  )
+}
 
 ```
 
