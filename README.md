@@ -2,7 +2,7 @@
 
   <img src="Icon.png" alt="OWF Icon" width="180" style="vertical-align:middle; margin-right:12px;"/> 
 
-This repository contains the code and data used in the analyses presented in the manuscript **" Offshore wind farm development alters food web structure and carbon flows: insights from a 14-year data-driven study, Ecological Indicators, 2026"**. It includes RMarkdown scripts, input files, and functions used to reproduce all results presented in the paper.
+This repository contains the code and data used in the manuscript **"Offshore wind farm development alters food web structure and carbon flows: insights from a 14-year data-driven study, Ecological Indicators, 2026"**. It includes RMarkdown scripts, input files, and functions used to reproduce all results presented in the paper.
 
 The associated article can be found [here](https://doi.org/xxxxx).
 
