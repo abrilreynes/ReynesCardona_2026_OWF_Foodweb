@@ -282,6 +282,7 @@ p <- ggplot(data_filtered, aes(x = Year, y = Value, color = Year, group = 1)) +
   scale_x_discrete() + 
   facet_wrap(~ Index, scales = "free", ncol = 3) +
   labs(title = "", x = "Year", y = "Value") +
+scale_x_discrete(labels = function(x) ifelse(x == "2022", "2022/23", x)) +
   theme_cowplot(12) +
   theme(
     axis.title.x = element_text(size = 14),
@@ -447,6 +448,7 @@ pf <- curveBallNets %>%
 #Manuscript plotting
 ```{r}
 
+
 create_plot_with_significance <- function(data, variable, label, websTbl) {
   library(ggplot2)
   library(ggsignif)
@@ -478,6 +480,8 @@ p <- ggplot(filtered_data, aes(x = Network, y = .data[[variable]], color = Netwo
     ylab("") +
     ggtitle(label) +  # Title added here
     theme_cowplot(12) +
+ scale_x_discrete(labels = function(x) ifelse(x == "2022", "2022/23", x)) +
+scale_color_brewer(palette = "Set1", labels = function(x) ifelse(x == "2022", "2022/23", x)) +
     theme(
       plot.title = element_text(size = 12, color = "grey30", hjust = 0.5),
       axis.title.x = element_blank(),
@@ -541,10 +545,12 @@ p <- ggplot(data_filtered, aes(x = Year, y = Value, color = Year, group = 1)) +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.09)))  +
   labs(x = "", y = "") +
   theme_cowplot(12) +
+   scale_x_discrete(labels = function(x) ifelse(x == "2022", "2022/23", x)) +
+scale_color_brewer(palette = "Set1", labels = function(x) ifelse(x == "2022", "2022/23", x)) +
   theme(
-    axis.title.x = element_blank(),  # Remove the x-axis title
+    axis.title.x = element_text(size = 12),  # Remove the x-axis title
     axis.title.y = element_text(size = 14),
-    axis.text.x = element_blank(),  # Remove the x-axis labels (years)
+    axis.text.x = element_text(size = 12),  # Remove the x-axis labels (years)
     axis.ticks.x = element_line(size = 0.5),  # Keep the ticks on the x-axis
     axis.text.y = element_text(size = 12),
     strip.text.x = element_text(size = 12, color = "grey30"),  # Adjusted color of facet labels
@@ -587,7 +593,7 @@ final_plot <- final_plot + plot_annotation(
 # Print the final plot
 print(final_plot)
 
-ggsave("~/phD/WP1_TemporalFW/manuscript/Figures/Topol_indices.jpg", plot = final_plot, dpi = 300, width = 9, height = 10)
+ggsave("~/phD/WP1_TemporalFW/manuscript/Figures/Topol_indices.jpg", plot = final_plot, dpi = 300, width = 9, height = 11)
 
 
 

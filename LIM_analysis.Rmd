@@ -553,6 +553,7 @@ turbine_variables_plot <- ggplot(combined_plot_data, aes(x = year, y = mean, fil
        y = expression("Mean carbon flows (mmol C / m"^2*"/day)"),
        fill = "Flow Type") +
   theme_minimal() +
+   scale_x_discrete(labels = function(x) ifelse(x == "2022", "2022/23", x)) +
   theme(axis.text.x = element_text(size = 14),
         axis.text.y = element_text(size = 14),
         legend.title = element_blank(),
@@ -639,6 +640,7 @@ production_plot <- ggplot(combined_prod, aes(x = factor(year), y = mean, fill = 
     y = expression("Mean production (mmol C / m"^2*"/day)"),
     fill = "Production Type"
   ) +
+ scale_x_discrete(labels = function(x) ifelse(x == "2022", "2022/23", x)) +
   theme_minimal() +
   theme(axis.text.x = element_text(size = 14),
         axis.text.y = element_text(size = 14),
@@ -658,71 +660,6 @@ write.csv(combined_prod, "~/phD/WP1_TemporalFW/LIM/combined_prod_Variables_CI.cs
 write.csv(combined_plot_data, "~/phD/WP1_TemporalFW/LIM/combined_plot_data.csv")
 
 ```
-#General second production plots
-```{r}
-
-selected_variables <- c("ProdFISH", "ProdSED", "ProdTURBINEROCK", "ProdUBIQUOUS")
-
-extract_year_stats <- function(stats, year) {
-  df <- stats[selected_variables, ]
-  colnames(df) <- c("mean", "sd")
-  df$year <- year
-  df$variable <- rownames(df)
-  df
-}
-
-
-combined_data <- bind_rows(
-  extract_year_stats(results_2009_stats, 2009),
-  extract_year_stats(results_2012_stats, 2012),
-  extract_year_stats(results_2016_stats, 2016),
-  extract_year_stats(results_2019_stats, 2019),
-  extract_year_stats(results_2022_stats, 2022)
-)
-
-combined_data$year <- factor(combined_data$year)
-
-plot_production_variable <- function(data, var_name, fill_color = "#377EB8") {
-  # Define descriptive titles for each variable
-  title_map <- c(
-    "ProdFISH"      = "Secondary Production Fish",
-    "ProdSED"       = "Secondary Production Sediment",
-    "ProdTURBINEROCK"   = "Secondary Production Hard-substrate",
-    "ProdUBIQUOUS"  = "Secondary Production Ubiquitous"
-  )
-
-  # Extract correct data and title
-  plot_data <- data %>% filter(variable == var_name)
-  plot_title <- title_map[[var_name]]
-
-  ggplot(plot_data, aes(x = year, y = mean)) +
-    geom_col(fill = fill_color, width = 0.7) +
-    geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd),
-                  width = 0.2, color = "black") +
-    labs(title = plot_title,
-         x = "Year",
-         y = expression("Production (mmol C " * m^{-2} * " day"^{-1} * ")")) +
-    theme_minimal(base_size = 14) +
-    theme(plot.title = element_text(hjust = 0.5, face = "bold"))
-}
-
-plot_prodFISH     <- plot_production_variable(combined_data, "ProdFISH")
-plot_prodSED      <- plot_production_variable(combined_data, "ProdSED")
-plot_prodTURBINE  <- plot_production_variable(combined_data, "ProdTURBINEROCK")
-plot_prodUBIQUOUS <- plot_production_variable(combined_data, "ProdUBIQUOUS")
-
-
-Production = plot_prodFISH + plot_prodSED + plot_prodTURBINE + plot_prodUBIQUOUS +
-  plot_layout(ncol = 2)
-
-ggsave("~/phD/WP1_TemporalFW/manuscript/Figures/Production_suppl.png", Production, height = 12, width = 12)
-
-
-```
-
-
-
-
 
 ```{r, eval = F}
 # Calculate indices for each year and type
@@ -773,6 +710,7 @@ GenPlot_with_CI <- ggplot(GenIndices_long, aes(x = Network, y = Value, fill = Ne
        x = "Year",
        y = expression("T.. (mmol C / m"^2*"/day)"),
        fill = "Year") +
+  scale_x_discrete(labels = function(x) ifelse(x == "2022", "2022/23", x)) +
   scale_fill_manual(values = col_palette) +
   theme_bw() +
   theme(axis.text.x = element_text(hjust = 1),
@@ -791,6 +729,7 @@ PathPlot_with_CI <- ggplot(PathIndices_long, aes(x = Network, y = Value, fill = 
        fill = "Year") +
   scale_fill_manual(values = col_palette) +
   theme_bw() +
+   scale_x_discrete(labels = function(x) ifelse(x == "2022", "2022/23", x)) +
   theme(axis.text.x = element_text(hjust = 1),
         strip.text = element_text(size = 10),
         panel.background = element_blank(),
@@ -895,6 +834,7 @@ AscPlot_with_CI <- ggplot(AscIndices_long, aes(x = Network, y = Value, fill = Ne
        x = "Year",
        y = expression(" (mmol C / m"^2*"/day)"),
        fill = "Year") +
+   scale_x_discrete(labels = function(x) ifelse(x == "2022", "2022/23", x)) +
   scale_fill_manual(values = col_palette) +
   theme_bw() +
   theme(axis.text.x = element_text(hjust = 1),
@@ -1162,8 +1102,8 @@ print(pairwise_wilcox)
 #Manuscript plotting
 ```{r}
 GenPlot_with_CI <- GenPlot_with_CI + 
-  theme(axis.text.x = element_text(size = 14),
-        axis.text.y = element_text(size = 14),  # Added this line
+  theme(axis.text.x = element_text(size = 14, angle = 30),
+        axis.text.y = element_text(size = 14, angle = 0),  # Added this line
         plot.title = element_text(face = "plain", hjust = 0.5, size = 15),
         legend.position = "none",
         axis.title.y = element_text(size = 14),
@@ -1188,8 +1128,8 @@ GenPlot_with_CI <- GenPlot_with_CI +
 
 
 ascendency_IS <- AscPlot_with_CI + 
-  theme(axis.text.x = element_text(size = 14),
-        axis.text.y = element_text(size = 14),  # Added this line
+  theme(axis.text.x = element_text(size = 14, angle = 30),
+        axis.text.y = element_text(size = 14, angle = 0),  # Added this line
         plot.title = element_text(face = "plain", hjust = 0.5, size = 15),
         legend.position = "none",
         axis.title.y = element_text(size = 14),
@@ -1201,11 +1141,11 @@ ascendency_IS <- AscPlot_with_CI +
 
 
 PathPlot_with_CI <- PathPlot_with_CI + 
-  theme(axis.text.x = element_text(size = 14),
-        axis.text.y = element_text(size = 14),  # Added this line
+  theme(axis.text.x = element_text(size = 14, angle = 30),
+        axis.text.y = element_text(size = 14, angle = 0),  # Added this line
         plot.title = element_text(face = "plain", hjust = 0.5, size = 15),
         legend.position = "none",
-        axis.title.y = element_text(size = 14),
+        axis.title.y = element_text(size = 14, angle = 90),
         axis.title.x = element_text(size = 14),
         panel.background = element_blank(),  # Corrected typo
         plot.background = element_blank()) +  # Corrected typo
@@ -1508,6 +1448,7 @@ Total_carbon2 <- ggplot(CstockTot_all, aes(fill = Variable, y = value, x = Year)
   geom_bar(position = "dodge", stat = "identity") +
   scale_fill_manual(values = Colors) +
   ylab(expression(paste("C stocks [mmol C m "^-2, "]"))) +
+  scale_x_discrete(labels = function(x) ifelse(x == "2022", "2022/23", x)) +
   xlab("Year") +
   theme_minimal(base_size = 10) +
   theme(text = element_text(size = 10),
@@ -1519,6 +1460,7 @@ Total_carbon2 <- ggplot(CstockTot_all, aes(fill = Variable, y = value, x = Year)
 
 print(Total_carbon2)
 
+ggsave("~/phD/WP1_TemporalFW/manuscript/Figures/Figure_4_Cstocks.jpeg", plot = Total_carbon2, dpi = 300, width = 8, height = 4)
 
 ```
 
