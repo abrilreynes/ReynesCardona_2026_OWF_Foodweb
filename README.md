@@ -7,7 +7,7 @@ This repository contains the code and data used in the manuscript **"Offshore wi
 [Author list]. (2026). Offshore wind farm development alters food web structure  and carbon flows: insights from a 14-year data-driven study. Ecological Indicators. 
 https://doi.org/xxxxx
 
-## 📁 Repository Structure
+### 📁 Repository Structure
 
 | File or Folder             | Description                                                                         |
 |----------------------------|-------------------------------------------------------------------------------------|
@@ -22,6 +22,10 @@ https://doi.org/xxxxx
 | `README.md`                | This file                                                                           |
 
 Please read the Materials and Methods section of the article and references therein to understand the models.
+
+### 📦 Code Archive
+
+This repository is archived on Zenodo: [![DOI](badge-link)](https://doi.org/10.5281/zenodo.XXXXXXX)
 
 ---
 
