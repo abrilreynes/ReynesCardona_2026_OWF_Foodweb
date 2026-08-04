@@ -2,11 +2,10 @@
 
   <img src="Icon.png" alt="OWF Icon" width="180" style="vertical-align:middle; margin-right:12px;"/> 
 
-This repository contains the code and data used in the manuscript **"Offshore wind farm development alters food web structure and carbon flows: insights from a 14-year data-driven study, Ecological Indicators, 2026"**. It includes RMarkdown scripts, input files, and functions used to reproduce all results presented in the paper.
+This repository contains the code and data used in the manuscript **"Offshore wind farm development alters food web structure and carbon flows: insights from a 14-year data-driven study**. It includes RMarkdown scripts, input files, and functions used to reproduce all results presented in the paper.
 
-The associated article can be found [here](https://doi.org/xxxxx).
-
----
+[Author list]. (2026). Offshore wind farm development alters food web structure  and carbon flows: insights from a 14-year data-driven study. Ecological Indicators. 
+https://doi.org/xxxxx
 
 ## 📁 Repository Structure
 
@@ -26,5 +25,5 @@ Please read the Materials and Methods section of the article and references ther
 
 ---
 
-#### Please contact the authors (Abril Reynés Cardona - abril.reynescardona@ugent.be) for any issue or remark.
+#### Please contact Abril Reynés Cardona - abril.reynescardona@ugent.be for any issue or remark.
 
