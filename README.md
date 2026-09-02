@@ -23,8 +23,17 @@ Please read the Materials and Methods section of the article and references ther
 ### 📦 Code Archive
 
 This repository is archived on Zenodo: [![DOI](badge-link)](https://doi.org/10.5281/zenodo.XXXXXXX)
+To reproduce the analyses, open `code.Rproj` in RStudio, then run:
+`LIM_analysis.Rmd` — quantitative food web analysis (Linear Inverse Modelling)
+`Topological_analysis.Rmd` — qualitative food web analysis and topological roles
 
-### Citation
+### 📖 Citation
+
+If you use this code or data, please cite both the paper and the code archive:
+
+**Paper:** Reynés-Cardona, A., De Borger, E., Vanaverbeke, J., Marina, T.I., Buyse, J., Braeckman, U. (2026). Offshore wind farm development alters food web structure and carbon flows: insights from a 14-year data-driven study. Ecological Indicators. DOI: [to be added upon publication]
+
+**Code archive:** Reynés-Cardona, A. et al. (2026). Code and data for: Offshore wind farm development alters food web structure and carbon flows [Software/Data]. Zenodo. DOI: [Zenodo DOI]
 
 ---
 
