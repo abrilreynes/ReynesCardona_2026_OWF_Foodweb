@@ -26,8 +26,6 @@ This repository is archived on Zenodo: [![DOI](badge-link)](https://doi.org/10.5
 
 ### Citation
 
-[Author list]. (2026). Offshore wind farm development alters food web structure  and carbon flows: insights from a 14-year data-driven study. Ecological Indicators. 
-https://doi.org/xxxxx
 ---
 
 #### Please contact Abril Reynés Cardona - abril.reynescardona@ugent.be for any issue or remark.
