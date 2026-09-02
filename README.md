@@ -35,6 +35,10 @@ If you use this code or data, please cite both the paper and the code archive:
 
 **Code archive:** Reynés-Cardona, A. et al. (2026). Code and data for: Offshore wind farm development alters food web structure and carbon flows [Software/Data]. Zenodo. DOI: [Zenodo DOI]
 
+### License
+
+This project is licensed under the GPL-3.0 License — see the LICENSE file for details.
+
 ---
 
 #### Please contact Abril Reynés Cardona - abril.reynescardona@ugent.be for any issue or remark.
